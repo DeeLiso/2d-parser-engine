@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="my" style="font-size: 16px;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Formula Parser Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        button, a {
+            touch-action: manipulation;
+        }
+        .overflow-y-auto, .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #slideMenu {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+        }
+        #slideMenu.open {
+            transform: translateX(0);
+        }
+        #overlay {
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { background-color: #fee2e2; }
+            50% { background-color: #fca5a5; }
+        }
+        .limit-exceeded {
+            animation: pulse-red 2s infinite;
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+        .limit-warning {
+            background-color: #ffedd5;
+            border-color: #f97316;
+            color: #9a3412;
+        }
+
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* ===== Live Ticker Marquee Animation ===== */
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .animate-marquee {
+            animation: marquee 18s linear infinite;
+        }
+        #tickerBar:hover .animate-marquee {
+            animation-play-state: paused;
+        }
+
+        /* ===== Hot Save Button Effects ===== */
+        @keyframes savePulse {
+            0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
+            100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+        }
+        .hot-save-btn:active {
+            animation: savePulse 0.4s ease-out;
+        }
+        @keyframes saveSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .hot-save-btn.saved {
+            background: linear-gradient(to right, #22c55e, #16a34a) !important;
+            animation: saveSuccess 0.3s ease-out;
+        }
+    </style>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-600 text-white shadow-lg sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14 sm:h-16 gap-2">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <button id="menuBtn" class="p-2 rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-white shrink-0">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <span class="font-bold text-sm sm:text-xl tracking-tight truncate">2D Formula Parser Engine</span>
+                </div>
+                <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+                    <div class="text-xs sm:text-sm font-medium bg-indigo-500 px-2 sm:px-3 py-1 rounded-full shadow-inner whitespace-nowrap">
+                        Total: <span id="navTotalAmt">0</span> Ks
+                    </div>
+                    <div class="flex items-center gap-2 bg-indigo-950 px-3 py-1 rounded-lg shadow-inner">
+                        <div class="text-center">
+                            <div class="text-[10px] text-indigo-300 font-semibold leading-none mb-0.5">🇲🇲 Myanmar</div>
+                            <div id="clockMyanmar" class="text-sm sm:text-base font-mono font-bold text-emerald-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
+                        </div>
+                        <div class="w-px h-8 bg-indigo-600"></div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-indigo-300 font-semibold leading-none mb-0.5">🇹🇭 Thailand</div>
+                            <div id="clockThailand" class="text-sm sm:text-base font-mono font-bold text-amber-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Live Ticker -->
+    <div id="tickerBar" class="bg-slate-800 text-emerald-300 overflow-hidden whitespace-nowrap shadow-md">
+        <div id="tickerContent" class="inline-block py-2 px-4 text-sm sm:text-base font-bold tracking-wide animate-marquee">
+            Thai 2D Live Result: <span id="tickerResult" class="text-white font-extrabold">--</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp; SET: <span id="tickerSet" class="text-white font-extrabold">--</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp; VALUE: <span id="tickerValue" class="text-white font-extrabold">--</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp; Updating Live...
+        </div>
+    </div>
+
+    <!-- Slide Menu (Settings) -->
+    <div id="overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-30"></div>
+    <div id="slideMenu" class="fixed inset-y-0 left-0 w-72 sm:w-80 bg-white shadow-2xl z-40 flex flex-col overflow-y-auto">
+        <div class="p-5 border-b border-gray-200 bg-indigo-50 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-indigo-800"><i class="fas fa-cogs mr-2"></i> Settings</h2>
+            <button id="closeMenuBtn" class="text-gray-500 hover:text-red-500 focus:outline-none">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+
+        <div class="p-5 space-y-4 flex-grow">
+            <a href="/records/" class="flex items-center gap-3 p-3 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition">
+                <span class="text-indigo-600"><i class="fas fa-list-ol text-lg"></i></span>
+                <span class="font-bold text-indigo-800">မှတ်တမ်းစာရင်း (Records)</span>
+            </a>
+            <a href="/ledger/" class="flex items-center gap-3 p-3 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition">
+                <span class="text-indigo-600"><i class="fas fa-th text-lg"></i></span>
+                <span class="font-bold text-indigo-800">ဒိုင် Ledger (00-99)</span>
+            </a>
+
+            <hr>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Adjust Font Size</label>
+                <input type="range" id="fontSizeSlider" min="12" max="24" value="16" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>A-</span>
+                    <span>Standard</span>
+                    <span>A+</span>
+                </div>
+            </div>
+
+            <hr>
+
+            <button id="clearAllBtn" class="w-full bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 font-bold transition shadow-md">
+                <i class="fas fa-trash-alt mr-2"></i> Clear All Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex flex-col lg:flex-row gap-6">
+
+        <!-- Left Panel: Input Area -->
+        <div class="w-full lg:w-1/3 flex flex-col gap-4">
+            <div class="bg-white rounded-xl shadow-md p-4 flex flex-col flex-grow border border-gray-100">
+                <label for="viberInput" class="block text-sm font-bold text-gray-700 mb-2">
+                    <i class="fab fa-viber text-purple-600 mr-1"></i> Paste Viber Text Here
+                </label>
+
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <div class="flex items-center flex-1 basis-32 min-w-[110px] border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-orange-500">
+                        <span class="px-2 text-gray-400"><i class="fas fa-fire"></i></span>
+                        <input id="hotNumInput" type="text" placeholder="Hot Number (23,33,44)" class="w-full p-2 outline-none text-sm font-bold">
+                    </div>
+                    <div class="flex items-center flex-1 basis-24 min-w-[100px] border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-orange-500">
+                        <span class="px-2 text-gray-400"><i class="fas fa-coins"></i></span>
+                        <input id="hotAmtInput" type="number" placeholder="ငွေပမာဏ" class="w-full p-2 outline-none text-sm">
+                    </div>
+                    <button id="saveHotBtn" class="hot-save-btn flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 whitespace-nowrap">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <div class="flex items-center flex-1 basis-40 min-w-[130px] border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-indigo-500">
+                        <span class="px-2 text-gray-400"><i class="fas fa-user"></i></span>
+                        <input id="bettorNameInput" type="text" placeholder="ထိုးသူအမည်" value="{{ bettor_name }}" class="w-full p-2 outline-none text-sm">
+                    </div>
+                    <div class="flex items-center flex-1 basis-28 min-w-[120px] border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-indigo-500">
+                        <span class="px-2 text-gray-400"><i class="fas fa-calendar"></i></span>
+                        <input id="bettorDateInput" type="date" value="{{ bettor_date }}" class="w-full p-2 outline-none text-sm">
+                    </div>
+                </div>
+
+                <span id="hotStatus" class="block text-xs font-semibold mb-2"></span>
+
+                <textarea id="viberInput" class="w-full flex-grow min-h-[250px] lg:min-h-0 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3 border resize-none font-mono text-sm" placeholder="Examples:
+5 ပတ် 500 / 5p500
+5 ထိပ် 500 / 5t500
+5 နောက် 500 / 5n500
+5 ဘရိတ် 500 / 5b500
+ပူး 500 / power 500 / nk 500 / ညီကို 500
+25 R 500 / 02468 ခွေ 500
+2470 ကို 18 နဲ့ ကပ် r 1000
+12 500, 34 200"></textarea>
+
+                <div class="mt-4 grid grid-cols-2 gap-1.5 sm:gap-2">
+                    <button id="btnCalculate" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm leading-tight py-2 px-1 rounded-lg shadow transition duration-200">
+                        <i class="fas fa-calculator mr-1"></i><span class="break-words">စာရင်းပေါင်းမည်</span>
+                    </button>
+                    <button id="btnAdd" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xs sm:text-sm leading-tight py-2 px-1 rounded-lg shadow transition duration-200">
+                        <i class="fas fa-paste mr-1"></i> paste
+                    </button>
+                </div>
+            </div>
+
+            <!-- Operation Log -->
+            <div class="bg-white rounded-xl shadow-md p-4 max-h-64 overflow-y-auto border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-700 border-b pb-2 mb-2"><i class="fas fa-history mr-1 text-gray-500"></i> Operation Log</h3>
+                <ul id="logList" class="text-sm space-y-1 font-mono"></ul>
+            </div>
+        </div>
+
+        <!-- Right Panel: Ledger Grid -->
+        <div class="w-full lg:w-2/3 flex flex-col gap-4">
+
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <div class="text-xs text-gray-500 font-semibold uppercase">Total Amount</div>
+                    <div id="statTotal" class="text-xl font-bold text-indigo-700">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <div class="text-xs text-gray-500 font-semibold uppercase">Total Bets (Lines)</div>
+                    <div id="statLines" class="text-xl font-bold text-blue-600">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <div class="text-xs text-gray-500 font-semibold uppercase">Over Limit Alerts</div>
+                    <div id="statAlerts" class="text-xl font-bold text-red-600">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <div class="text-xs text-gray-500 font-semibold uppercase">Global Limit</div>
+                    <div id="statLimit" class="text-xl font-bold text-gray-700">50,000</div>
+                </div>
+            </div>
+
+            <!-- Records Table -->
+            <div class="w-full bg-white rounded-xl shadow-md p-4 border border-gray-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-gray-800"><i class="fas fa-list-ol mr-2 text-indigo-500"></i> မှတ်တမ်းစာရင်း (Records)</h2>
+                    <span class="text-xs text-gray-500 font-medium">Primary Key အလိုအလျောက် စဉ်တိုး</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                        <table class="min-w-full text-sm">
+                            <thead class="sticky top-0 bg-gray-50 text-gray-600 z-10">
+                                <tr class="border-b">
+                                    <th class="text-center px-3 py-2 font-bold w-14">စဉ်</th>
+                                    <th class="text-left px-3 py-2 font-bold">ထိုးသူအမည်</th>
+                                    <th class="text-left px-3 py-2 font-bold">ဂဏန်း</th>
+                                    <th class="text-left px-3 py-2 font-bold">Formula</th>
+                                    <th class="text-right px-3 py-2 font-bold">ငွေပမာဏ</th>
+                                    <th class="text-left px-3 py-2 font-bold">အချိန်</th>
+                                    <th class="text-right px-3 py-2 font-bold">စုစုပေါင်းငွေပမာဏ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsBody" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // ===== Dual Digital Clocks (Myanmar & Thailand) =====
+        function formatTime12(timezone) {
+            const now = new Date();
+            const options = {
+                timeZone: timezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            return now.toLocaleTimeString('en-US', options);
+        }
+        function updateClocks() {
+            document.getElementById('clockMyanmar').textContent = formatTime12('Asia/Yangon');
+            document.getElementById('clockThailand').textContent = formatTime12('Asia/Bangkok');
+        }
+        updateClocks();
+        setInterval(updateClocks, 1000);
+
+        // ===== Live Ticker Data Simulation =====
+        const tickerData = {
+            result: '59',
+            set: '1,452.34',
+            value: '35,678.90'
+        };
+        function updateTicker() {
+            document.getElementById('tickerResult').textContent = tickerData.result;
+            document.getElementById('tickerSet').textContent = tickerData.set;
+            document.getElementById('tickerValue').textContent = tickerData.value;
+        }
+        updateTicker();
+        // Simulate live updates every 5 seconds
+        setInterval(() => {
+            const base = parseFloat(tickerData.set.replace(/,/g, ''));
+            tickerData.set = (base + (Math.random() - 0.5) * 10).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const vbase = parseFloat(tickerData.value.replace(/,/g, ''));
+            tickerData.value = (vbase + (Math.random() - 0.5) * 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            updateTicker();
+        }, 5000);
+
+        // ===== State (initialized from server) =====
+        let ledger = {{ ledger_json|safe }};
+        let globalLimit = {{ global_limit }};
+        let specificLimits = {{ specific_limits_json|safe }};
+        let totalAmount = {{ total_amount }};
+        let validLinesCount = {{ valid_lines }};
+
+        const CSRF = document.getElementById('csrfToken').value;
+        const slideMenu = document.getElementById('slideMenu');
+        const overlay = document.getElementById('overlay');
+        const logList = document.getElementById('logList');
+        const recordsBody = document.getElementById('recordsBody');
+        const bettorNameInput = document.getElementById('bettorNameInput');
+        const bettorDateInput = document.getElementById('bettorDateInput');
+        const RECORDS = {{ logs_json|safe }};
+
+        // ===== API helper =====
+        async function post(url, data) {
+            const body = new URLSearchParams();
+            for (const [k, v] of Object.entries(data)) body.append(k, v);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF },
+                body
+            });
+            return res.json();
+        }
+
+        function applyState(state) {
+            ledger = state.ledger;
+            globalLimit = state.global_limit;
+            specificLimits = state.specific_limits;
+            totalAmount = state.total_amount;
+            validLinesCount = state.valid_lines;
+            updateUI();
+        }
+
+        // ===== Stats =====
+        function updateUI() {
+            let overLimitCount = 0;
+            for (let i = 0; i < 100; i++) {
+                const numStr = i < 10 ? '0' + i : '' + i;
+                const amt = ledger[i] || 0;
+                const limit = specificLimits[numStr] !== undefined ? specificLimits[numStr] : globalLimit;
+                if (amt >= limit) overLimitCount++;
+            }
+
+            document.getElementById('statTotal').textContent = totalAmount.toLocaleString();
+            document.getElementById('navTotalAmt').textContent = totalAmount.toLocaleString();
+            document.getElementById('statLines').textContent = validLinesCount;
+            document.getElementById('statAlerts').textContent = overLimitCount;
+            document.getElementById('statLimit').textContent = globalLimit.toLocaleString();
+        }
+
+        // ===== Logs =====
+        function logMessage(msg, type = 'info') {
+            const li = document.createElement('li');
+            li.className = 'py-1 border-b border-gray-100 last:border-0 break-words';
+            if (type === 'error') {
+                li.innerHTML = `<i class="fas fa-exclamation-circle text-red-500 mr-1"></i> <span class="text-red-600 font-medium">Ignored/Invalid:</span> ${msg}`;
+            } else if (type === 'success') {
+                li.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-1"></i> ${msg}`;
+            } else {
+                li.textContent = msg;
+            }
+            logList.prepend(li);
+        }
+
+        function initLogs() {
+            RECORDS.forEach((l) => {
+                if (l.is_error) {
+                    logMessage(l.original, 'error');
+                } else {
+                    logMessage(`Added: [${l.formula}] ${l.count} numbers x ${l.amount} Ks`, 'success');
+                }
+            });
+        }
+
+        // ===== Records Table =====
+        function addRecordRow(r, action) {
+            if (r.is_error) return;
+            const nums = (r.numbers || []).join(', ');
+            const numText = nums.length > 80 ? nums.slice(0, 80) + '...' : (nums || '-');
+            const isDel = action === 'delete';
+            const total = r.count * r.amount;
+            const meta = (r.bettor_name || r.bettor_date)
+                ? `${r.bettor_name || ''} ${r.bettor_date ? '· ' + r.bettor_date : ''}`
+                : '';
+
+            const tr = document.createElement('tr');
+            tr.className = isDel ? 'bg-red-50' : 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="px-3 py-2 text-center font-semibold text-gray-700">${r.id}</td>
+                <td class="px-3 py-2 font-medium text-indigo-700">${isDel ? 'ဖျက် - ' : ''}${r.formula}${meta ? `<div class="text-[11px] text-gray-400 font-normal">${meta}</div>` : ''}</td>
+                <td class="px-3 py-2 text-gray-700 max-w-xs truncate" title="${nums}">${numText}</td>
+                <td class="px-3 py-2 font-mono text-gray-600 max-w-[180px] truncate" title="${r.original}">${r.original}</td>
+                <td class="px-3 py-2 text-right font-bold ${isDel ? 'text-red-600' : 'text-green-700'}">${isDel ? '-' : ''}${r.amount.toLocaleString()}</td>
+                <td class="px-3 py-2 text-gray-500">${r.time}</td>
+                <td class="px-3 py-2 text-right font-bold text-gray-800 ${isDel ? 'text-red-600' : ''}">${isDel ? '-' : ''}${total.toLocaleString()}</td>
+            `;
+            recordsBody.appendChild(tr);
+            const wrap = recordsBody.closest('.max-h-96');
+            if (wrap) wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        function initRecords() {
+            RECORDS.slice().reverse().forEach((r) => addRecordRow(r, 'add'));
+        }
+
+        // ===== Auto-Save Bettor Meta + Hot Numbers (stays until Clear All) =====
+        async function saveMetaAndHot() {
+            const statusEl = document.getElementById('hotStatus');
+            const parts = [];
+
+            const meta = await post('/api/save_meta', {
+                name: bettorNameInput.value,
+                date: bettorDateInput.value
+            });
+            if (meta.ok) {
+                parts.push(`ထိုးသူ: ${meta.bettor_name || '—'} · ${meta.bettor_date || '—'}`);
+            }
+
+            const raw = document.getElementById('hotNumInput').value.trim();
+            const limit = parseInt(document.getElementById('hotAmtInput').value);
+            if (raw && !isNaN(limit) && limit > 0) {
+                const valid = [];
+                for (const part of raw.split(/[\s,၊။]+/)) {
+                    const n = parseInt(part);
+                    if (!isNaN(n) && n >= 0 && n <= 99) valid.push(n < 10 ? '0' + n : '' + n);
+                }
+                if (valid.length) {
+                    let lastData = null;
+                    for (const num of valid) {
+                        lastData = await post('/api/set_specific_limit', { num, limit });
+                    }
+                    if (lastData && lastData.ok) {
+                        parts.push(`Hot ${valid.length} ခု`);
+                        applyState(lastData);
+                    }
+                }
+            }
+
+            if (parts.length) {
+                statusEl.textContent = 'Saved ✓ ' + parts.join(' · ');
+                statusEl.className = 'text-emerald-600 text-xs font-semibold';
+            }
+            return parts.length > 0;
+        }
+
+        // ===== Calculate / Add / Delete =====
+        async function calculate(action) {
+            const text = document.getElementById('viberInput').value;
+            if (!text.trim()) return;
+
+            await saveMetaAndHot();
+
+            const data = await post('/api/parse', {
+                text,
+                action,
+                bettor_name: bettorNameInput.value,
+                bettor_date: bettorDateInput.value
+            });
+            if (data.ok) {
+                (data.logs || []).forEach((l) => {
+                    if (l.is_error) {
+                        logMessage(l.original, 'error');
+                    } else if (action === 'delete') {
+                        logMessage(`Removed: [${l.formula}] ${l.count} numbers x ${l.amount} Ks`, 'info');
+                    } else {
+                        logMessage(`Added: [${l.formula}] ${l.count} numbers x ${l.amount} Ks`, 'success');
+                    }
+                    if (!l.is_error) addRecordRow(l, action);
+                });
+                document.getElementById('viberInput').value = '';
+                applyState(data);
+            }
+        }
+
+        document.getElementById('btnCalculate').addEventListener('click', () => calculate('add'));
+
+        // ===== Hot Number Save Button =====
+        document.getElementById('saveHotBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('saveHotBtn');
+            const raw = document.getElementById('hotNumInput').value.trim();
+            const limit = parseInt(document.getElementById('hotAmtInput').value);
+            const statusEl = document.getElementById('hotStatus');
+
+            if (!raw || isNaN(limit) || limit <= 0) {
+                statusEl.textContent = 'ဂဏန်း + Limit ထည့်ပါ!';
+                statusEl.className = 'text-red-500 text-xs font-semibold';
+                return;
+            }
+
+            const valid = [];
+            for (const part of raw.split(/[\s,၊။]+/)) {
+                const n = parseInt(part);
+                if (!isNaN(n) && n >= 0 && n <= 99) valid.push(n < 10 ? '0' + n : '' + n);
+            }
+            if (!valid.length) {
+                statusEl.textContent = 'နံပါတ် မမှန်ပါ (00-99)';
+                statusEl.className = 'text-red-500 text-xs font-semibold';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            let lastData = null;
+            for (const num of valid) {
+                lastData = await post('/api/set_specific_limit', { num, limit });
+            }
+
+            if (lastData && lastData.ok) {
+                btn.classList.add('saved');
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                statusEl.textContent = `🔥 ${valid.length} ခု သိမ်းပြီး ✓`;
+                statusEl.className = 'text-emerald-600 text-xs font-semibold';
+                applyState(lastData);
+                document.getElementById('hotNumInput').value = '';
+                document.getElementById('hotAmtInput').value = '';
+                setTimeout(() => {
+                    btn.classList.remove('saved');
+                    btn.innerHTML = '<i class="fas fa-save"></i> Save';
+                    btn.disabled = false;
+                }, 1500);
+                setTimeout(() => { statusEl.textContent = ''; }, 3000);
+            } else {
+                btn.innerHTML = '<i class="fas fa-times"></i> Error';
+                statusEl.textContent = 'သိမ်းမရပါ';
+                statusEl.className = 'text-red-500 text-xs font-semibold';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-save"></i> Save';
+                    btn.disabled = false;
+                }, 1500);
+            }
+        });
+
+        // ===== Paste from Clipboard =====
+        document.getElementById('btnAdd').addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && text.trim()) {
+                    document.getElementById('viberInput').value = text;
+                    logMessage('Pasted from clipboard ✓', 'success');
+                } else {
+                    logMessage('Clipboard ထဲ text မရှိပါ', 'info');
+                }
+            } catch (err) {
+                logMessage('Clipboard access failed: ' + err, 'error');
+            }
+        });
+
+        // ===== Slide Menu =====
+        const menuBtn = document.getElementById('menuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+
+        function toggleMenu() {
+            slideMenu.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+        menuBtn.addEventListener('click', toggleMenu);
+        closeMenuBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+
+        // ===== Font Size =====
+        document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
+            document.documentElement.style.fontSize = e.target.value + 'px';
+        });
+
+        // ===== Clear All =====
+        document.getElementById('clearAllBtn').addEventListener('click', async () => {
+            const data = await post('/api/clear_all', {});
+            if (data.ok) {
+                logList.innerHTML = '<li class="text-gray-400 italic">Data cleared.</li>';
+                recordsBody.innerHTML = '';
+                bettorNameInput.value = '';
+                bettorDateInput.value = '';
+                document.getElementById('hotNumInput').value = '';
+                document.getElementById('hotAmtInput').value = '';
+                document.getElementById('hotStatus').textContent = '';
+                applyState(data);
+                toggleMenu();
+            }
+        });
+
+        // ===== Init =====
+        initLogs();
+        initRecords();
+    </script>
+</body>
+</html>
