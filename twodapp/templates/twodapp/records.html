@@ -37,9 +37,34 @@
         #tickerBar:hover .animate-marquee {
             animation-play-state: paused;
         }
+
+        /* ===== AM/PM Period Buttons ===== */
+        @keyframes ripple {
+            0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
+            70% { box-shadow: 0 0 0 12px rgba(99,102,241,0); }
+            100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+        }
+        .period-btn {
+            transition: all 0.25s ease;
+            transform: scale(1);
+        }
+        .period-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+        .period-btn:active {
+            animation: ripple 0.4s ease-out;
+        }
+        .period-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
 
     <!-- Navbar -->
     <nav class="bg-indigo-600 text-white shadow-lg sticky top-0 z-20">
@@ -68,6 +93,16 @@
                             <div id="clockThailand" class="text-sm sm:text-base font-mono font-bold text-amber-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
                         </div>
                     </div>
+                    <form method="post" action="{% url 'logout' %}" class="flex items-center gap-1.5">
+                        {% csrf_token %}
+                        <span class="hidden md:inline text-xs text-indigo-200 font-semibold max-w-[120px] truncate">
+                            <i class="fas fa-user-circle mr-1"></i>{{ user.username }}
+                        </span>
+                        <button type="submit" title="Logout"
+                                class="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-100 transition transform hover:scale-105">
+                            <i class="fas fa-sign-out-alt text-sm"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -98,24 +133,18 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <div class="max-h-[70vh] overflow-y-auto border border-gray-200 rounded-lg">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 bg-gray-50 text-gray-600 z-10">
-                            <tr class="border-b">
-                                <th class="text-center px-3 py-2 font-bold w-14">စဉ်</th>
-                                <th class="text-left px-3 py-2 font-bold">ထိုးသူအမည်</th>
-                                <th class="text-left px-3 py-2 font-bold">ဂဏန်း</th>
-                                <th class="text-left px-3 py-2 font-bold">Formula</th>
-                                <th class="text-right px-3 py-2 font-bold">ငွေပမာဏ</th>
-                                <th class="text-left px-3 py-2 font-bold">အချိန်</th>
-                                <th class="text-right px-3 py-2 font-bold">စုစုပေါင်းငွေပမာဏ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recordsBody" class="divide-y divide-gray-100"></tbody>
-                    </table>
-                </div>
+            <div class="flex flex-wrap items-center gap-2 mb-4 period-bar">
+                <input type="hidden" id="periodState" value="all">
+                <span class="text-sm font-semibold text-gray-500 mr-1"><i class="fas fa-clock mr-1 text-indigo-400"></i>အချိန်ပိုင်း:</span>
+                <button class="period-btn" data-period="am">
+                    <i class="fas fa-sun mr-1 text-yellow-400"></i>AM
+                </button>
+                <button class="period-btn" data-period="pm">
+                    <i class="fas fa-moon mr-1 text-indigo-400"></i>PM
+                </button>
             </div>
+
+            <div id="recordsBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[70vh] overflow-y-auto pr-1"></div>
 
             <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 text-sm">
                 <span class="text-gray-500">Showing <span id="showCount">0</span> / <span id="totalCount">0</span></span>
@@ -123,6 +152,24 @@
             </div>
         </div>
     </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity">
+        <div id="editModalContent" class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col transform scale-95 transition-transform">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-indigo-600 text-white rounded-t-xl">
+                <h3 class="font-bold text-lg"><i class="fas fa-edit mr-2"></i> Edit Records</h3>
+                <button type="button" id="closeEditBtn" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto" id="editModalBody"></div>
+            <div class="px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl flex items-center justify-between gap-3">
+                <span class="text-xs text-gray-500">ပြောင်းလဲမှုများကို Save နှိပ်ပြီး သိမ်းပါ</span>
+                <div class="flex gap-2">
+                    <button type="button" id="cancelEditBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold px-4 py-2 rounded-lg transition">Cancel</button>
+                    <button type="button" id="saveEditBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg transition"><i class="fas fa-save mr-1"></i> Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ===== Dual Digital Clocks (Myanmar & Thailand) =====
@@ -144,63 +191,189 @@
         updateClocks();
         setInterval(updateClocks, 1000);
 
-        // ===== Live Ticker Data Simulation =====
+        // ===== Live Ticker Data (Thai Stock 2D API) =====
         const tickerData = {
-            result: '59',
-            set: '1,452.34',
-            value: '35,678.90'
+            result: '--',
+            set: '--',
+            value: '--',
+            time: ''
         };
         function updateTicker() {
             document.getElementById('tickerResult').textContent = tickerData.result;
             document.getElementById('tickerSet').textContent = tickerData.set;
             document.getElementById('tickerValue').textContent = tickerData.value;
         }
-        updateTicker();
-        setInterval(() => {
-            const base = parseFloat(tickerData.set.replace(/,/g, ''));
-            tickerData.set = (base + (Math.random() - 0.5) * 10).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            const vbase = parseFloat(tickerData.value.replace(/,/g, ''));
-            tickerData.value = (vbase + (Math.random() - 0.5) * 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        async function fetchLiveData() {
+            try {
+                const res = await fetch('/api/live');
+                const data = await res.json();
+                if (data.ok) {
+                    tickerData.result = data.result || '--';
+                    tickerData.set = data.set || '--';
+                    tickerData.value = data.value || '--';
+                    tickerData.time = data.time || '';
+                }
+            } catch (e) {
+                // API unreachable - keep last known values
+            }
             updateTicker();
-        }, 5000);
+        }
+        updateTicker();
+        fetchLiveData();
+        // Poll the API every 30 seconds
+        setInterval(fetchLiveData, 30000);
 
         const RECORDS = {{ records_json|safe }};
 
-        function numText(nums) {
-            const s = (nums || []).join(', ');
-            return s.length > 80 ? s.slice(0, 80) + '...' : (s || '-');
+        function formatDateParts(timeStr) {
+            const t = timeStr || '';
+            const m = t.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2}:\d{2})/);
+            if (m) {
+                return { date: `${m[3]}/${m[2]}/${m[1]}`, time: m[4] };
+            }
+            const onlyDate = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (onlyDate) {
+                return { date: `${onlyDate[3]}/${onlyDate[2]}/${onlyDate[1]}`, time: '' };
+            }
+            return { date: t || '—', time: '' };
         }
 
         function render() {
             const q = document.getElementById('searchInput').value.toLowerCase().trim();
             const type = document.getElementById('typeFilter').value;
+            const period = document.getElementById('periodState').value;
             const body = document.getElementById('recordsBody');
             body.innerHTML = '';
             let shown = 0;
             let grand = 0;
 
-            RECORDS.slice().reverse().forEach((r) => {
-                if (type && r.formula !== type) return;
+            const filtered = RECORDS.slice().reverse().filter((r) => {
+                if (type && r.formula !== type) return false;
+                if (period !== 'all') {
+                    const hour = parseInt(String(r.time).slice(11, 13), 10);
+                    const isAM = !isNaN(hour) && hour < 12;
+                    if ((period === 'am' && !isAM) || (period === 'pm' && isAM)) return false;
+                }
                 if (q) {
                     const hay = `${r.formula} ${r.original} ${r.bettor_name || ''} ${(r.numbers || []).join(' ')} ${r.id}`.toLowerCase();
-                    if (!hay.includes(q)) return;
+                    if (!hay.includes(q)) return false;
                 }
-                shown++;
-                const total = r.count * r.amount;
-                if (!r.is_error) grand += r.amount * r.count;
+                return true;
+            });
 
-                const tr = document.createElement('tr');
-                tr.className = r.is_error ? 'bg-red-50' : 'hover:bg-gray-50';
-                tr.innerHTML = `
-                    <td class="px-3 py-2 text-center font-semibold text-gray-700">${r.id}</td>
-                    <td class="px-3 py-2 font-medium text-indigo-700">${r.is_error ? 'Invalid' : (r.bettor_name || '—')}${r.formula ? `<div class="text-[11px] text-gray-400 font-normal">${r.formula}${r.bettor_date ? ' · ' + r.bettor_date : ''}</div>` : ''}</td>
-                    <td class="px-3 py-2 text-gray-700 max-w-xs truncate" title="${(r.numbers || []).join(', ')}">${numText(r.numbers)}</td>
-                    <td class="px-3 py-2 font-mono text-gray-600 max-w-[180px] truncate" title="${r.original}">${r.original}</td>
-                    <td class="px-3 py-2 text-right font-bold ${r.is_error ? 'text-gray-400' : 'text-green-700'}">${r.amount.toLocaleString()}</td>
-                    <td class="px-3 py-2 text-gray-500">${r.time}</td>
-                    <td class="px-3 py-2 text-right font-bold ${r.is_error ? 'text-gray-400' : 'text-gray-800'}">${r.is_error ? '—' : total.toLocaleString()}</td>
+            // Group non-error records by (bettor_name + time)
+            const groups = [];
+            const groupMap = new Map();
+            const errors = [];
+            filtered.forEach((r) => {
+                if (r.is_error) { errors.push(r); return; }
+                const key = `${r.bettor_name || '—'}||${r.time}`;
+                if (!groupMap.has(key)) {
+                    const g = { name: r.bettor_name || '—', time: r.time, records: [] };
+                    groupMap.set(key, g);
+                    groups.push(g);
+                }
+                groupMap.get(key).records.push(r);
+            });
+
+            // Render errors first (each as its own card)
+            errors.forEach((r) => {
+                shown++;
+                const card = document.createElement('div');
+                card.className = 'bg-red-50 border border-red-200 rounded-xl p-3 shadow-sm flex flex-col gap-2 transition hover:shadow-md';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="inline-flex items-center gap-1.5 text-red-600 font-bold text-sm min-w-0">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span class="truncate">Invalid</span>
+                        </span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" title="Share to Viber" data-group="${r.id}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110">
+                                <i class="fab fa-viber text-base"></i>
+                            </button>
+                            <span class="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">#${r.id}</span>
+                            <button type="button" title="Delete" data-group="${r.id}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110">
+                                <i class="fas fa-trash-alt text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-sm text-red-600 font-medium break-words">${r.original}</div>
                 `;
-                body.appendChild(tr);
+                body.appendChild(card);
+            });
+
+            // Render grouped cards
+            groups.forEach((g) => {
+                const { date, time } = formatDateParts(g.time);
+                const ids = g.records.map((r) => r.id).join(', ');
+                let groupTotal = 0;
+                let groupAmount = 0;
+                const allNums = new Set();
+                let firstId = g.records[0].id;
+
+                const rows = g.records.map((r) => {
+                    const total = r.count * r.amount;
+                    groupTotal += total;
+                    groupAmount += r.amount;
+                    (r.numbers || []).forEach((n) => allNums.add(n));
+                    if (r.id < firstId) firstId = r.id;
+                    return `
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded shrink-0">${r.formula}</span>
+                            <span class="text-[11px] text-gray-400 font-mono truncate flex-1 min-w-0" title="${r.original}">${r.original}</span>
+                            <span class="font-bold text-green-700 shrink-0">${r.amount.toLocaleString()} Ks</span>
+                        </div>
+                    `;
+                }).join('');
+
+                const numChips = [...allNums].map((n) =>
+                    `<span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded">${n}</span>`
+                ).join(' ');
+
+                shown += g.records.length;
+                grand += groupTotal;
+
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-xl p-3 shadow-sm flex flex-col gap-2 transition hover:shadow-md hover:border-indigo-200';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="inline-flex items-center gap-1.5 text-indigo-700 font-bold text-sm min-w-0">
+                            <i class="fas fa-user"></i>
+                            <span class="truncate">${g.name}</span>
+                        </span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" title="Share to Viber" data-group="${ids}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110">
+                                <i class="fab fa-viber text-base"></i>
+                            </button>
+                            <span class="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full" title="IDs: ${ids}">#${firstId}${g.records.length > 1 ? ` +${g.records.length - 1}` : ''}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1.5">${rows}</div>
+                    <div class="flex flex-wrap gap-1">${numChips}</div>
+                    <div class="border-t border-dashed border-gray-200 pt-2 flex items-center justify-between gap-2 text-sm">
+                        <div>
+                            <div class="text-[11px] text-gray-400 font-semibold uppercase">ငွေပမာဏ</div>
+                            <div class="font-bold text-green-700">${groupAmount.toLocaleString()} Ks</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="button" title="Edit" data-group="${ids}" class="edit-group-btn text-gray-300 hover:text-indigo-600 transition transform hover:scale-110">
+                                <i class="fas fa-edit text-base"></i>
+                            </button>
+                            <button type="button" title="Delete" data-group="${ids}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110">
+                                <i class="fas fa-trash-alt text-base"></i>
+                            </button>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[11px] text-gray-400 font-semibold uppercase">စုစုပေါင်း</div>
+                            <div class="font-extrabold text-gray-800">${groupTotal.toLocaleString()} Ks</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 text-[11px] text-gray-400 border-t border-gray-100 pt-1.5">
+                        <span><i class="far fa-clock mr-1"></i>${time}</span>
+                        <span><i class="far fa-calendar mr-1"></i>${date}</span>
+                    </div>
+                `;
+                body.appendChild(card);
             });
 
             document.getElementById('showCount').textContent = shown;
@@ -212,6 +385,187 @@
         document.getElementById('searchInput').addEventListener('input', render);
 
         document.getElementById('typeFilter').addEventListener('change', render);
+
+        // ===== AM/PM period buttons =====
+        const periodBtns = document.querySelectorAll('.period-btn');
+        periodBtns.forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const wasActive = this.classList.contains('active');
+                periodBtns.forEach((b) => b.classList.remove('active'));
+                document.getElementById('periodState').value = wasActive ? 'all' : this.dataset.period;
+                if (!wasActive) this.classList.add('active');
+                render();
+            });
+        });
+
+        // ===== API helper =====
+        const CSRF = document.getElementById('csrfToken').value;
+        async function post(url, data) {
+            const body = new URLSearchParams();
+            for (const [k, v] of Object.entries(data)) body.append(k, v);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF },
+                body
+            });
+            return res.json();
+        }
+
+        // ===== Edit / Delete handlers (event delegation) =====
+        document.getElementById('recordsBody').addEventListener('click', async (e) => {
+            const editBtn = e.target.closest('.edit-group-btn');
+            const delBtn = e.target.closest('.del-group-btn');
+            const shareBtn = e.target.closest('.share-group-btn');
+            if (!editBtn && !delBtn && !shareBtn) return;
+
+            if (shareBtn) {
+                shareToViber(shareBtn.dataset.group);
+                return;
+            }
+
+            const ids = editBtn ? editBtn.dataset.group : delBtn.dataset.group;
+            const idList = ids.split(',').map(Number);
+
+            if (delBtn) {
+                if (!confirm('ဒီမှတ်တမ်း (' + idList.length + ' ခု) ကို ဖျက်မှာလား?')) return;
+                const data = await post('/api/delete_logs', { ids });
+                if (data.ok) {
+                    for (const id of idList) {
+                        const i = RECORDS.findIndex((r) => r.id === id);
+                        if (i !== -1) RECORDS.splice(i, 1);
+                    }
+                    render();
+                } else {
+                    alert('ဖျက်မရပါ: ' + (data.error || 'error'));
+                }
+            }
+
+            if (editBtn) {
+                openEditModal(idList);
+            }
+        });
+
+        // ===== Share to Viber =====
+        function buildShareText(idList) {
+            const records = idList.map((id) => RECORDS.find((r) => r.id === id)).filter(Boolean);
+            if (!records.length) return '';
+            const isError = records[0].is_error;
+
+            if (isError) {
+                return `⚠️ Invalid: ${records[0].original}`;
+            }
+
+            const { date, time } = formatDateParts(records[0].time);
+            const lines = [];
+            lines.push(`👤 ${records[0].bettor_name || '—'}`);
+            lines.push(`📅 ${date} | 🕐 ${time}`);
+            let total = 0;
+            const allNums = new Set();
+            records.forEach((r) => {
+                const t = r.count * r.amount;
+                total += t;
+                (r.numbers || []).forEach((n) => allNums.add(n));
+                lines.push(`🎫 ${r.formula} | ${(r.numbers || []).join(', ')} | ${r.amount.toLocaleString()} Ks`);
+            });
+            lines.push(`🔢 ${[...allNums].join(', ')}`);
+            lines.push(`💰 Total: ${total.toLocaleString()} Ks`);
+            return lines.join('\n');
+        }
+
+        function shareToViber(ids) {
+            const idList = ids.split(',').map(Number);
+            const text = buildShareText(idList);
+            if (!text) return;
+            const url = 'viber://forward?text=' + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        // ===== Edit Modal =====
+        const editModal = document.getElementById('editModal');
+        const editModalContent = document.getElementById('editModalContent');
+        const editModalBody = document.getElementById('editModalBody');
+        let editIdList = [];
+
+        function openEditModal(idList) {
+            editIdList = idList;
+            const records = idList.map((id) => RECORDS.find((r) => r.id === id)).filter(Boolean);
+            if (!records.length) return;
+
+            const { date, time } = formatDateParts(records[0].time);
+            editModalBody.innerHTML = `
+                <div class="flex items-center justify-between gap-2 mb-4 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <span class="font-bold text-indigo-700"><i class="fas fa-user mr-1"></i>${records[0].bettor_name || '—'}</span>
+                    <span class="text-xs text-gray-500"><i class="far fa-clock mr-1"></i>${time} <i class="far fa-calendar ml-2 mr-1"></i>${date}</span>
+                </div>
+                ${records.map((r, idx) => `
+                    <div class="border border-gray-200 rounded-lg p-3 mb-3 bg-white">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">#${r.id}</span>
+                            <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded">${r.formula}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            ${(r.numbers || []).map((n) => `<span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded">${n}</span>`).join(' ')}
+                        </div>
+                        <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">ငွေပမာဏ (Ks)</label>
+                        <input type="number" min="1" data-id="${r.id}" class="edit-amount-input w-full border border-gray-300 rounded-lg p-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" value="${r.amount}">
+                    </div>
+                `).join('')}
+            `;
+            editModal.classList.remove('hidden');
+            setTimeout(() => {
+                editModal.classList.remove('opacity-0');
+                editModalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeEditModal() {
+            editModal.classList.add('opacity-0');
+            editModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                editModal.classList.add('hidden');
+                editIdList = [];
+            }, 300);
+        }
+
+        document.getElementById('closeEditBtn').addEventListener('click', closeEditModal);
+        document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) closeEditModal();
+        });
+
+        document.getElementById('saveEditBtn').addEventListener('click', async () => {
+            const items = [];
+            let hasChange = false;
+            editIdList.forEach((id) => {
+                const input = editModalBody.querySelector(`.edit-amount-input[data-id="${id}"]`);
+                if (input) {
+                    const val = parseInt(input.value);
+                    const rec = RECORDS.find((r) => r.id === id);
+                    if (rec && !isNaN(val) && val > 0 && val !== rec.amount) hasChange = true;
+                    if (!isNaN(val) && val > 0) items.push({ id, amount: val });
+                }
+            });
+            if (!items.length) {
+                closeEditModal();
+                return;
+            }
+            const saveBtn = document.getElementById('saveEditBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            const data = await post('/api/edit_logs', { items: JSON.stringify(items) });
+            if (data.ok) {
+                items.forEach((it) => {
+                    const r = RECORDS.find((x) => x.id === it.id);
+                    if (r) r.amount = it.amount;
+                });
+                closeEditModal();
+                render();
+            } else {
+                alert('ပြင်မရပါ: ' + (data.error || 'error'));
+            }
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save';
+        });
 
         (function init() {
             const types = [...new Set(RECORDS.map((r) => r.formula).filter(Boolean))].sort();

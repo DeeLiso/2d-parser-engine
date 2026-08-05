@@ -1,11 +1,32 @@
+import functools
 import json
+import urllib.request
+from zoneinfo import ZoneInfo
 
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.http import require_POST
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import GameState, OperationLog
 from .parser import parse_text
+
+MMT = ZoneInfo('Asia/Yangon')
+
+
+def api_login_required(fn):
+    @functools.wraps(fn)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'ok': False, 'error': 'Not authenticated'}, status=403)
+        return fn(request, *args, **kwargs)
+    return wrapper
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 
 
 def _serialize_log(log):
@@ -19,10 +40,11 @@ def _serialize_log(log):
         'is_error': log.is_error,
         'bettor_name': log.bettor_name,
         'bettor_date': log.bettor_date,
-        'time': log.created_at.astimezone().strftime('%Y-%m-%d %H:%M:%S'),
+        'time': log.created_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
     }
 
 
+@login_required
 def records_page(request):
     records = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:1000]]
     return render(request, 'twodapp/records.html', {
@@ -31,6 +53,7 @@ def records_page(request):
     })
 
 
+@login_required
 def ledger_page(request):
     state = GameState.get_state()
     return render(request, 'twodapp/ledger.html', {
@@ -59,6 +82,7 @@ def state_payload(state):
     }
 
 
+@login_required
 def index(request):
     state = GameState.get_state()
     records = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:200]]
@@ -74,7 +98,42 @@ def index(request):
     })
 
 
+@require_GET
+@api_login_required
+def api_live(request):
+    """Proxy the Thai Stock 2D live API to avoid CORS issues."""
+    try:
+        req = urllib.request.Request(
+            'https://api.thaistock2d.com/live',
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        live = data.get('live', {})
+        result = data.get('result', [])
+        return JsonResponse({
+            'ok': True,
+            'result': live.get('twod', '--'),
+            'set': live.get('set', '--'),
+            'value': live.get('value', '--'),
+            'time': live.get('time', ''),
+            'today_results': [
+                {
+                    'time': r.get('open_time', ''),
+                    'result': r.get('twod', '--'),
+                    'set': r.get('set', '--'),
+                    'value': r.get('value', '--'),
+                }
+                for r in result
+            ],
+            'holiday': data.get('holiday', {}),
+        })
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)})
+
+
 @require_POST
+@api_login_required
 def api_parse(request):
     text = request.POST.get('text', '')
     action = request.POST.get('action', 'add')  # 'add' or 'delete'
@@ -113,6 +172,7 @@ def api_parse(request):
 
 
 @require_POST
+@api_login_required
 def api_set_global_limit(request):
     try:
         val = int(request.POST.get('limit', ''))
@@ -127,6 +187,84 @@ def api_set_global_limit(request):
 
 
 @require_POST
+@api_login_required
+def api_delete_logs(request):
+    ids_raw = request.POST.get('ids', '')
+    state = GameState.get_state()
+    ledger = list(state.ledger)
+    try:
+        ids = [int(x) for x in ids_raw.split(',') if x.strip().isdigit()]
+    except ValueError:
+        ids = []
+    if not ids:
+        return JsonResponse({'ok': False, 'error': 'Invalid ids'})
+    for log in OperationLog.objects.filter(pk__in=ids):
+        for num in log.numbers or []:
+            try:
+                idx = int(num)
+            except (ValueError, TypeError):
+                continue
+            if 0 <= idx < 100:
+                ledger[idx] = max(0, ledger[idx] - log.amount)
+                state.total_amount = max(0, state.total_amount - log.amount)
+    state.ledger = ledger
+    state.valid_lines = max(0, state.valid_lines - OperationLog.objects.filter(pk__in=ids, is_error=False).count())
+    state.save()
+    OperationLog.objects.filter(pk__in=ids).delete()
+    return JsonResponse({'ok': True, **state_payload(state)})
+
+
+@require_POST
+@api_login_required
+def api_edit_logs(request):
+    """Edit amounts for multiple records at once.
+    Expects 'items' = JSON list of {"id": <int>, "amount": <int>}.
+    """
+    import json as _json
+    try:
+        items = _json.loads(request.POST.get('items', '[]'))
+    except (ValueError, TypeError):
+        items = []
+    if not items:
+        return JsonResponse({'ok': False, 'error': 'No items'})
+
+    state = GameState.get_state()
+    ledger = list(state.ledger)
+    updates = []
+    for it in items:
+        try:
+            log_id = int(it.get('id'))
+            new_amount = int(it.get('amount'))
+        except (ValueError, TypeError):
+            continue
+        if new_amount <= 0:
+            continue
+        updates.append((log_id, new_amount))
+
+    logs = OperationLog.objects.filter(pk__in=[u[0] for u in updates])
+    for log in logs:
+        new_amount = dict(updates)[log.pk]
+        diff = new_amount - log.amount
+        if diff == 0:
+            continue
+        for num in log.numbers or []:
+            try:
+                idx = int(num)
+            except (ValueError, TypeError):
+                continue
+            if 0 <= idx < 100:
+                ledger[idx] = max(0, ledger[idx] + diff)
+                state.total_amount = max(0, state.total_amount + diff)
+        log.amount = new_amount
+        log.save()
+
+    state.ledger = ledger
+    state.save()
+    return JsonResponse({'ok': True, **state_payload(state)})
+
+
+@require_POST
+@api_login_required
 def api_set_specific_limit(request):
     num = request.POST.get('num', '').strip()
     num = num.zfill(2) if num.isdigit() else ''
@@ -149,6 +287,7 @@ def api_set_specific_limit(request):
 
 
 @require_POST
+@api_login_required
 def api_delete_specific_limit(request):
     num = request.POST.get('num', '').strip()
     state = GameState.get_state()
@@ -160,6 +299,7 @@ def api_delete_specific_limit(request):
 
 
 @require_POST
+@api_login_required
 def api_save_meta(request):
     name = request.POST.get('name', '').strip()
     date = request.POST.get('date', '').strip()
@@ -171,6 +311,7 @@ def api_save_meta(request):
 
 
 @require_POST
+@api_login_required
 def api_clear_all(request):
     state = GameState.get_state()
     state.ledger = [0] * 100

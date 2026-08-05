@@ -133,6 +133,16 @@
                             <div id="clockThailand" class="text-sm sm:text-base font-mono font-bold text-amber-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
                         </div>
                     </div>
+                    <form method="post" action="{% url 'logout' %}" class="flex items-center gap-1.5">
+                        {% csrf_token %}
+                        <span class="hidden md:inline text-xs text-indigo-200 font-semibold max-w-[120px] truncate">
+                            <i class="fas fa-user-circle mr-1"></i>{{ user.username }}
+                        </span>
+                        <button type="submit" title="Logout"
+                                class="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-100 transition transform hover:scale-105">
+                            <i class="fas fa-sign-out-alt text-sm"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -324,26 +334,37 @@
         updateClocks();
         setInterval(updateClocks, 1000);
 
-        // ===== Live Ticker Data Simulation =====
+        // ===== Live Ticker Data (Thai Stock 2D API) =====
         const tickerData = {
-            result: '59',
-            set: '1,452.34',
-            value: '35,678.90'
+            result: '--',
+            set: '--',
+            value: '--',
+            time: ''
         };
         function updateTicker() {
             document.getElementById('tickerResult').textContent = tickerData.result;
             document.getElementById('tickerSet').textContent = tickerData.set;
             document.getElementById('tickerValue').textContent = tickerData.value;
         }
-        updateTicker();
-        // Simulate live updates every 5 seconds
-        setInterval(() => {
-            const base = parseFloat(tickerData.set.replace(/,/g, ''));
-            tickerData.set = (base + (Math.random() - 0.5) * 10).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            const vbase = parseFloat(tickerData.value.replace(/,/g, ''));
-            tickerData.value = (vbase + (Math.random() - 0.5) * 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        async function fetchLiveData() {
+            try {
+                const res = await fetch('/api/live');
+                const data = await res.json();
+                if (data.ok) {
+                    tickerData.result = data.result || '--';
+                    tickerData.set = data.set || '--';
+                    tickerData.value = data.value || '--';
+                    tickerData.time = data.time || '';
+                }
+            } catch (e) {
+                // API unreachable - keep last known values
+            }
             updateTicker();
-        }, 5000);
+        }
+        updateTicker();
+        fetchLiveData();
+        // Poll the API every 30 seconds
+        setInterval(fetchLiveData, 30000);
 
         // ===== State (initialized from server) =====
         let ledger = {{ ledger_json|safe }};
