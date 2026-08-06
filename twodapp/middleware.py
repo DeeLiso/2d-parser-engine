@@ -42,7 +42,7 @@ class ProtectionMiddleware:
 
         response['X-Content-Type-Options'] = 'nosniff'
         response['X-Frame-Options'] = 'DENY'
-        response['Referrer-Policy'] = 'no-referrer'
+        response['Referrer-Policy'] = 'same-origin'
         response['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
 
         return response
