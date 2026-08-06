@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
@@ -13,6 +13,10 @@ from .models import GameState, OperationLog
 from .parser import parse_text
 
 MMT = ZoneInfo('Asia/Yangon')
+
+
+def robots_txt(request):
+    return HttpResponse('User-agent: *\nDisallow: /\n', content_type='text/plain')
 
 
 def api_login_required(fn):
@@ -44,12 +48,61 @@ def _serialize_log(log):
     }
 
 
+def over_limit_items(state):
+    bettors_by_num = {}
+    for name, nums in OperationLog.objects.exclude(bettor_name='').values_list('bettor_name', 'numbers'):
+        for n in nums or []:
+            bettors_by_num.setdefault(n, set()).add(name)
+    items = []
+    for i, amt in enumerate(state.ledger):
+        num = f'{i:02d}'
+        limit = state.specific_limits.get(num) or state.global_limit
+        if limit and amt >= limit:
+            items.append({
+                'num': num, 'amount': amt, 'limit': limit, 'over': amt - limit,
+                'bettors': sorted(bettors_by_num.get(num, set()))[:3],
+            })
+    return items
+
+
 @login_required
 def records_page(request):
+    state = GameState.get_state()
     records = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:1000]]
     return render(request, 'twodapp/records.html', {
         'records_json': json.dumps(records),
         'count': len(records),
+        'over_limits_json': json.dumps(over_limit_items(state)),
+    })
+
+
+@login_required
+def limit_page(request):
+    state = GameState.get_state()
+    over = over_limit_items(state)
+    over_map = {o['num']: o for o in over}
+    logs = []
+    for l in OperationLog.objects.order_by('-id')[:2000]:
+        if l.is_error:
+            continue
+        hit = [n for n in (l.numbers or []) if n in over_map]
+        if not hit:
+            continue
+        logs.append({
+            'id': l.pk,
+            'formula': l.formula,
+            'original': l.original,
+            'numbers': l.numbers or [],
+            'amount': l.amount,
+            'bettor_name': l.bettor_name,
+            'time': l.created_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
+            'over_nums': hit,
+            'over_detail': [over_map[n] for n in hit],
+        })
+    return render(request, 'twodapp/limit.html', {
+        'over_limits_json': json.dumps(over),
+        'logs_json': json.dumps(logs),
+        'count': len(logs),
     })
 
 
@@ -95,6 +148,7 @@ def index(request):
         'bettor_name': state.bettor_name,
         'bettor_date': state.bettor_date,
         'logs_json': json.dumps(records),
+        'over_limits_json': json.dumps(over_limit_items(state)),
     })
 
 

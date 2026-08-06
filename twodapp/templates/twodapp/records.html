@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="my" style="font-size: 16px;">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +7,7 @@
     <title>မှတ်တမ်းစာရင်း (Records)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="{% static 'js/security.js' %}" defer></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -60,6 +62,141 @@
             color: #fff;
             box-shadow: 0 4px 14px rgba(99,102,241,0.4);
         }
+        /* ===== Draw Number Boxes ===== */
+        .draw-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #fbbf24;
+            border-radius: 10px;
+            padding: 3px 10px;
+            cursor: help;
+            transition: all 0.25s ease;
+        }
+        .draw-box:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(245,158,11,0.35);
+        }
+        .draw-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #92400e;
+        }
+        .draw-num {
+            font-size: 16px;
+            font-weight: 800;
+            color: #78350f;
+            font-family: Consolas, monospace;
+            line-height: 1;
+        }
+        .draw-box.updating .draw-num {
+            animation: drawPulse 0.7s ease;
+        }
+        @keyframes drawPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); color: #dc2626; }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== Winning Number Chips ===== */
+        .win-chip {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+            color: #78350f !important;
+            box-shadow: 0 0 0 2px rgba(245,158,11,0.4), 0 0 8px rgba(245,158,11,0.5);
+        }
+
+        /* ===== Hit Banner (winning) ===== */
+        .hit-banner {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #78350f;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: help;
+            transition: all 0.2s ease;
+        }
+        .hit-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245,158,11,0.4);
+        }
+        .hit-banner .hit-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            background: #1f2937;
+            color: #fbbf24;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(4px);
+            transition: all 0.2s ease;
+            z-index: 30;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .hit-banner:hover .hit-tooltip {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== Over Limit Banner (in cards) ===== */
+        .over-banner {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border: 1px solid #f87171;
+            color: #991b1b;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .over-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239,68,68,0.35);
+        }
+        .over-alert-btn {
+            transition: all 0.2s ease;
+        }
+        .over-alert-btn:hover {
+            box-shadow: 0 0 14px rgba(239,68,68,0.6);
+        }
+        .over-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 12px;
+            border-bottom: 1px dashed #fecaca;
+            font-size: 12px;
+            transition: background 0.15s ease;
+        }
+        .over-list-item:hover {
+            background: #fef2f2;
+        }
+        .over-list-num {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            font-weight: 800;
+            padding: 1px 7px;
+            border-radius: 6px;
+            font-family: Consolas, monospace;
+        }
+        .over-chip {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            color: #fff !important;
+            box-shadow: 0 0 0 2px rgba(239,68,68,0.4);
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
@@ -68,27 +205,38 @@
 
     <!-- Navbar -->
     <nav class="bg-indigo-600 text-white shadow-lg sticky top-0 z-20">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-14 sm:h-16 gap-2">
-                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14 sm:h-16 gap-1.5">
+                <div class="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
                     <a href="/" class="p-2 rounded-md hover:bg-indigo-500 focus:outline-none shrink-0">
                         <i class="fas fa-arrow-left text-xl"></i>
                     </a>
-                    <span class="font-bold text-sm sm:text-xl tracking-tight truncate">
+                    <span class="font-bold text-sm sm:text-xl tracking-tight truncate min-w-0">
                         <i class="fas fa-list-ol mr-2"></i> မှတ်တမ်းစာရင်း (Records)
                     </span>
                 </div>
-                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     <div class="text-xs sm:text-sm font-medium bg-indigo-500 px-2 sm:px-3 py-1 rounded-full shadow-inner whitespace-nowrap">
-                        <span id="recCount">0</span> records
+                        <span id="recCount">0</span><span class="hidden sm:inline"> records</span>
                     </div>
-                    <div class="flex items-center gap-2 bg-indigo-950 px-3 py-1 rounded-lg shadow-inner">
-                        <div class="text-center">
-                            <div class="text-[10px] text-indigo-300 font-semibold leading-none mb-0.5">🇲🇲 Myanmar</div>
-                            <div id="clockMyanmar" class="text-sm sm:text-base font-mono font-bold text-emerald-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
+                    <div class="relative" id="overLimitWrap">
+                        <button id="overLimitBtn" type="button" title="Limit ကျော်နေတဲ့ ဂဏန်းများ"
+                                class="hidden items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500 text-white shadow-lg shadow-red-900/30 transition transform hover:scale-105 hover:bg-red-600 over-alert-btn">
+                            <i class="fas fa-exclamation-triangle animate-pulse"></i>
+                            <span id="overLimitCount">0</span>
+                        </button>
+                        <div id="overLimitPanel" class="hidden absolute right-0 top-full mt-2 w-64 sm:w-72 bg-white text-gray-800 rounded-xl shadow-2xl border border-red-200 z-50 overflow-hidden">
+                            <div class="bg-red-600 text-white px-4 py-2 text-sm font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>Limit ကျော်နေတဲ့ ဂဏန်းများ</div>
+                            <div id="overLimitList" class="max-h-72 overflow-y-auto py-1"></div>
                         </div>
-                        <div class="w-px h-8 bg-indigo-600"></div>
+                    </div>
+                    <div class="flex items-center gap-1.5 sm:gap-2 bg-indigo-950 px-2 sm:px-3 py-1 rounded-lg shadow-inner">
                         <div class="text-center">
+                            <div class="hidden sm:block text-[10px] text-indigo-300 font-semibold leading-none mb-0.5">🇲🇲 Myanmar</div>
+                            <div id="clockMyanmar" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
+                        </div>
+                        <div class="hidden sm:block w-px h-8 bg-indigo-600"></div>
+                        <div class="hidden sm:block text-center">
                             <div class="text-[10px] text-indigo-300 font-semibold leading-none mb-0.5">🇹🇭 Thailand</div>
                             <div id="clockThailand" class="text-sm sm:text-base font-mono font-bold text-amber-400 tracking-widest whitespace-nowrap leading-tight">--:--:-- --</div>
                         </div>
@@ -121,7 +269,17 @@
     <main class="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 w-full">
         <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 border border-gray-100">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 class="text-lg font-bold text-gray-800"><i class="fas fa-table mr-2 text-indigo-500"></i> မှတ်တမ်းအားလုံး</h2>
+                <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="text-lg font-bold text-gray-800"><i class="fas fa-table mr-2 text-indigo-500"></i> မှတ်တမ်းအားလုံး</h2>
+                    <div class="draw-box" title="နေ့လည် 12:00 မှာ ထွက်တဲ့ ဂဏန်း — မနက်ပိုင်း (AM) လောင်းထားတဲ့သူတွေအတွက်">
+                        <span class="draw-label"><i class="fas fa-sun mr-1"></i>12:00</span>
+                        <span id="drawNoonNum" class="draw-num">--</span>
+                    </div>
+                    <div class="draw-box" title="နေ့လည် 4:30 မှာ ထွက်တဲ့ ဂဏန်း — ညနေပိုင်း (PM) လောင်းထားတဲ့သူတွေအတွက်">
+                        <span class="draw-label"><i class="fas fa-moon mr-1"></i>4:30</span>
+                        <span id="drawEveningNum" class="draw-num">--</span>
+                    </div>
+                </div>
                 <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <div class="flex items-center flex-1 sm:flex-none border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-indigo-500">
                         <span class="px-2 text-gray-400"><i class="fas fa-search"></i></span>
@@ -198,6 +356,22 @@
             value: '--',
             time: ''
         };
+        const PAYOUT_RATE = 80;
+        const drawNums = { noon: '--', evening: '--' };
+        function updateDrawBoxes(noon, evening) {
+            const nEl = document.getElementById('drawNoonNum');
+            const eEl = document.getElementById('drawEveningNum');
+            if (nEl && noon !== drawNums.noon) {
+                nEl.textContent = noon;
+                nEl.closest('.draw-box').classList.add('updating');
+                setTimeout(() => nEl.closest('.draw-box').classList.remove('updating'), 800);
+            }
+            if (eEl && evening !== drawNums.evening) {
+                eEl.textContent = evening;
+                eEl.closest('.draw-box').classList.add('updating');
+                setTimeout(() => eEl.closest('.draw-box').classList.remove('updating'), 800);
+            }
+        }
         function updateTicker() {
             document.getElementById('tickerResult').textContent = tickerData.result;
             document.getElementById('tickerSet').textContent = tickerData.set;
@@ -212,6 +386,17 @@
                     tickerData.set = data.set || '--';
                     tickerData.value = data.value || '--';
                     tickerData.time = data.time || '';
+
+                    const results = data.today_results || [];
+                    const noon = results.find((r) => String(r.time).startsWith('12:'));
+                    const evening = results.find((r) => String(r.time).startsWith('16:30'));
+                    const newNoon = noon ? (noon.result || '--') : '--';
+                    const newEvening = evening ? (evening.result || '--') : '--';
+                    const changed = newNoon !== drawNums.noon || newEvening !== drawNums.evening;
+                    updateDrawBoxes(newNoon, newEvening);
+                    drawNums.noon = newNoon;
+                    drawNums.evening = newEvening;
+                    if (changed) render();
                 }
             } catch (e) {
                 // API unreachable - keep last known values
@@ -224,6 +409,56 @@
         setInterval(fetchLiveData, 30000);
 
         const RECORDS = {{ records_json|safe }};
+        let overLimits = {{ over_limits_json|safe }};
+
+        function overItemFor(num) {
+            return overLimits.find((o) => o.num === num) || null;
+        }
+        function computeOverLimitsFromState(s) {
+            const items = [];
+            const limitFor = (num) => (s.specific_limits && s.specific_limits[num] !== undefined) ? s.specific_limits[num] : s.global_limit;
+            (s.ledger || []).forEach((amt, i) => {
+                const num = String(i).padStart(2, '0');
+                const limit = limitFor(num);
+                if (limit && amt >= limit) items.push({ num, amount: amt, limit, over: amt - limit });
+            });
+            return items;
+        }
+        function updateOverLimitUI() {
+            const btn = document.getElementById('overLimitBtn');
+            const panel = document.getElementById('overLimitPanel');
+            if (!overLimits.length) {
+                btn.classList.add('hidden');
+                btn.classList.remove('flex');
+                panel.classList.add('hidden');
+                return;
+            }
+            btn.classList.remove('hidden');
+            btn.classList.add('flex');
+            document.getElementById('overLimitCount').textContent = overLimits.length;
+            document.getElementById('overLimitList').innerHTML = overLimits.map((o) => `
+                <div class="over-list-item" title="ဒီဂဏန်းကို limit ထပ်ကျော်လို့ ထပ်မလောင်းသင့်ပါ">
+                    <div class="flex flex-col gap-0.5 min-w-0">
+                        <span class="flex items-center gap-1.5">
+                            <span class="over-list-num">${o.num}</span>
+                            <span class="text-gray-600 font-semibold">${o.amount.toLocaleString()} / ${o.limit.toLocaleString()} Ks</span>
+                        </span>
+                        <span class="text-[11px] text-gray-400 truncate">
+                            <i class="fas fa-user mr-1"></i>${(o.bettors && o.bettors.length) ? o.bettors.join(', ') : '—'}
+                        </span>
+                    </div>
+                    <span class="font-bold text-red-600 whitespace-nowrap">+${o.over.toLocaleString()} Ks</span>
+                </div>
+            `).join('');
+        }
+        document.getElementById('overLimitBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('overLimitPanel').classList.toggle('hidden');
+        });
+        document.addEventListener('click', () => {
+            document.getElementById('overLimitPanel').classList.add('hidden');
+        });
+        updateOverLimitUI();
 
         function formatDateParts(timeStr) {
             const t = timeStr || '';
@@ -236,6 +471,17 @@
                 return { date: `${onlyDate[3]}/${onlyDate[2]}/${onlyDate[1]}`, time: '' };
             }
             return { date: t || '—', time: '' };
+        }
+
+        function getRecordHit(r) {
+            const t = String(r.time || '');
+            const hour = parseInt(t.slice(11, 13), 10);
+            const isAM = !isNaN(hour) && hour < 12;
+            const winNum = isAM ? drawNums.noon : drawNums.evening;
+            if (winNum && winNum !== '--' && (r.numbers || []).includes(winNum)) {
+                return { num: winNum, amount: r.amount * PAYOUT_RATE, label: isAM ? '12:00' : '4:30' };
+            }
+            return null;
         }
 
         function render() {
@@ -309,13 +555,27 @@
                 let groupTotal = 0;
                 let groupAmount = 0;
                 const allNums = new Set();
+                const winNums = new Set();
+                const winInfo = {};
+                let winTotal = 0;
+                const overNums = new Set();
                 let firstId = g.records[0].id;
 
                 const rows = g.records.map((r) => {
                     const total = r.count * r.amount;
                     groupTotal += total;
                     groupAmount += r.amount;
-                    (r.numbers || []).forEach((n) => allNums.add(n));
+                    (r.numbers || []).forEach((n) => {
+                        allNums.add(n);
+                        if (overItemFor(n)) overNums.add(n);
+                    });
+                    const hit = getRecordHit(r);
+                    if (hit) {
+                        winNums.add(hit.num);
+                        winTotal += hit.amount;
+                        if (!winInfo[hit.num]) winInfo[hit.num] = { label: hit.label, amount: 0 };
+                        winInfo[hit.num].amount += hit.amount;
+                    }
                     if (r.id < firstId) firstId = r.id;
                     return `
                         <div class="flex items-center gap-2 text-sm">
@@ -327,14 +587,31 @@
                 }).join('');
 
                 const numChips = [...allNums].map((n) =>
-                    `<span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded">${n}</span>`
+                    `<span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded${winNums.has(n) ? ' win-chip' : overNums.has(n) ? ' over-chip' : ''}">${n}${winNums.has(n) ? ' 🎯' : overNums.has(n) ? ' ⚠️' : ''}</span>`
                 ).join(' ');
+
+                const overDetails = [...overNums].map((n) => {
+                    const o = overItemFor(n);
+                    return `<b>${o.num}</b> (${o.amount.toLocaleString()}/${o.limit.toLocaleString()} Ks, +${o.over.toLocaleString()} Ks)`;
+                }).join('; ');
+                const overBanner = overNums.size ? `
+                    <div class="over-banner" title="ဒီဂဏန်းတွေက limit ထက်ကျော်နေလို့ သတိထားပါ">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Limit ကျော်နေသည်: ${overDetails}
+                    </div>` : '';
+
+                const hitBanner = winTotal > 0 ? `
+                    <div class="hit-banner">
+                        <i class="fas fa-trophy"></i>
+                        ပေါက်ဂဏန်း <b>${[...winNums].join(', ')}</b> · ဆု <b>${winTotal.toLocaleString()} Ks</b>
+                        <span class="hit-tooltip">${Object.entries(winInfo).map(([n, v]) => `${n} က ${v.label} draw မှာ ဝင်ခဲ့ပြီး ${PAYOUT_RATE}x = ${v.amount.toLocaleString()} Ks`).join('<br>')}</span>
+                    </div>` : '';
 
                 shown += g.records.length;
                 grand += groupTotal;
 
                 const card = document.createElement('div');
-                card.className = 'bg-white border border-gray-200 rounded-xl p-3 shadow-sm flex flex-col gap-2 transition hover:shadow-md hover:border-indigo-200';
+                card.className = 'bg-white border rounded-xl p-3 shadow-sm flex flex-col gap-2 transition hover:shadow-md ' + (winTotal > 0 ? 'border-amber-400 ring-1 ring-amber-300 hover:border-amber-500' : 'border-gray-200 hover:border-indigo-200');
                 card.innerHTML = `
                     <div class="flex items-center justify-between gap-2">
                         <span class="inline-flex items-center gap-1.5 text-indigo-700 font-bold text-sm min-w-0">
@@ -350,6 +627,8 @@
                     </div>
                     <div class="flex flex-col gap-1.5">${rows}</div>
                     <div class="flex flex-wrap gap-1">${numChips}</div>
+                    ${hitBanner}
+                    ${overBanner}
                     <div class="border-t border-dashed border-gray-200 pt-2 flex items-center justify-between gap-2 text-sm">
                         <div>
                             <div class="text-[11px] text-gray-400 font-semibold uppercase">ငွေပမာဏ</div>
@@ -434,6 +713,8 @@
                         const i = RECORDS.findIndex((r) => r.id === id);
                         if (i !== -1) RECORDS.splice(i, 1);
                     }
+                    overLimits = computeOverLimitsFromState(data);
+                    updateOverLimitUI();
                     render();
                 } else {
                     alert('ဖျက်မရပါ: ' + (data.error || 'error'));
@@ -559,6 +840,8 @@
                     if (r) r.amount = it.amount;
                 });
                 closeEditModal();
+                overLimits = computeOverLimitsFromState(data);
+                updateOverLimitUI();
                 render();
             } else {
                 alert('ပြင်မရပါ: ' + (data.error || 'error'));
@@ -579,5 +862,20 @@
             render();
         })();
     </script>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-gray-400 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-row items-center justify-center gap-3">
+            <span class="text-xs font-medium">Developer DeeLiso</span>
+            <a href="https://github.com/DeeLiso" target="_blank" rel="noopener noreferrer" title="GitHub"
+               class="flex items-center justify-center w-7 h-7 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition">
+                <i class="fab fa-github text-sm"></i>
+            </a>
+            <a href="viber://chat?number=%2B959446534581" title="Viber"
+               class="flex items-center justify-center w-7 h-7 rounded-full bg-purple-700 hover:bg-purple-600 text-white transition">
+                <i class="fab fa-viber text-sm"></i>
+            </a>
+        </div>
+    </footer>
 </body>
 </html>

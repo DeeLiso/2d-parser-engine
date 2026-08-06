@@ -4,10 +4,12 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('robots.txt', views.robots_txt, name='robots'),
     path('login/', auth_views.LoginView.as_view(template_name='twodapp/login.html'), name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('', views.index, name='index'),
     path('records/', views.records_page, name='records'),
+    path('limit/', views.limit_page, name='limit'),
     path('ledger/', views.ledger_page, name='ledger'),
     path('api/parse', views.api_parse, name='api_parse'),
     path('api/live', views.api_live, name='api_live'),

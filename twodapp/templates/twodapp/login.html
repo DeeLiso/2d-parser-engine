@@ -1,11 +1,13 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="my" style="font-size: 16px;">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ဝင်ရောက်ရန် (Login)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="{% static 'js/security.js' %}" defer></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -25,12 +27,12 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 min-h-screen flex items-center justify-center p-4 overflow-x-hidden">
 
     <div class="login-card bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="bg-indigo-600 text-white px-6 py-5 text-center">
             <div class="text-3xl mb-1"><i class="fas fa-dice"></i></div>
-            <h1 class="text-xl font-bold">2D Parser Engine</h1>
+            <h1 class="text-xl font-bold">2DAD</h1>
             <p class="text-indigo-200 text-sm mt-0.5">မှတ်တမ်းစာရင်း စီမံခန့်ခွဲမှုစနစ်</p>
         </div>
 
