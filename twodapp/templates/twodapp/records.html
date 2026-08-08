@@ -302,7 +302,85 @@
                 </button>
             </div>
 
-            <div id="recordsBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[70vh] overflow-y-auto pr-1"></div>
+            <div class="flex flex-wrap items-center gap-2 mb-4 date-bar">
+                <input type="hidden" id="dateState" value="all">
+                <span class="text-sm font-semibold text-gray-500 mr-1"><i class="fas fa-calendar-day mr-1 text-indigo-400"></i>နေ့:</span>
+                <button class="period-btn date-btn active" data-date="all">
+                    <i class="fas fa-list mr-1 text-gray-500"></i>အားလုံး
+                </button>
+                <button class="period-btn date-btn" data-date="today">
+                    <i class="fas fa-sun mr-1 text-yellow-500"></i>ဒီနေ့
+                </button>
+                <button class="period-btn date-btn" data-date="yesterday">
+                    <i class="fas fa-history mr-1 text-gray-500"></i>မနေ့က
+                </button>
+                <span class="flex flex-wrap items-center gap-1.5 date-range">
+                    <input type="date" id="dateFrom" title="From Date"
+                           class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                    <span class="text-gray-400 text-xs">→</span>
+                    <input type="date" id="dateTo" title="To Date"
+                           class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                    <button class="period-btn date-btn" data-date="custom">
+                        <i class="fas fa-calendar-alt mr-1 text-indigo-400"></i>Custom
+                    </button>
+                </span>
+                <button id="dateClearBtn" title="နေ့စစ်ထုတ်ခြင်းကို ဖျက်မည်"
+                        class="text-xs font-semibold text-gray-400 hover:text-red-500 transition px-1">
+                    <i class="fas fa-undo-alt mr-1"></i>ပြန်ဖျက်
+                </button>
+            </div>
+
+            <!-- Daily Summary -->
+            <div id="summaryBar" class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 sm:p-3">
+                    <div class="text-[11px] text-gray-500 font-semibold uppercase"><i class="fas fa-receipt mr-1 text-indigo-500"></i>Total Sales</div>
+                    <div id="sumSales" class="text-lg sm:text-xl font-bold text-indigo-700 mt-1">0 Ks</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 sm:p-3">
+                    <div class="text-[11px] text-gray-500 font-semibold uppercase"><i class="fas fa-hand-holding-usd mr-1 text-amber-500"></i>Total Payout</div>
+                    <div id="sumPayout" class="text-lg sm:text-xl font-bold text-amber-600 mt-1">0 Ks</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 sm:p-3">
+                    <div class="text-[11px] text-gray-500 font-semibold uppercase"><i class="fas fa-chart-line mr-1 text-green-500"></i>Net Profit</div>
+                    <div id="sumNet" class="text-lg sm:text-xl font-bold mt-1">0 Ks</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 sm:p-3">
+                    <div class="text-[11px] text-gray-500 font-semibold uppercase"><i class="fas fa-filter mr-1 text-gray-400"></i>ရွေးထားသော</div>
+                    <div id="sumCount" class="text-lg sm:text-xl font-bold text-gray-700 mt-1">0 ခု</div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h2 class="text-base sm:text-lg font-bold text-gray-800"><i class="fas fa-table mr-2 text-indigo-500"></i>မှတ်တမ်းဇယား</h2>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="hidden sm:inline text-[11px] text-gray-400"><i class="fas fa-sort mr-1"></i>ခေါင်းစဉ် နှိပ်၍ စီရန်</span>
+                    <button id="exportCsvBtn" title="CSV ဖိုင် ထုတ်ယူမည်"
+                            class="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition transform">
+                        <i class="fas fa-file-csv"></i> CSV ထုတ်မည်
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <table class="w-full text-sm min-w-[760px]">
+                    <thead class="sticky top-0 bg-indigo-50 text-indigo-700 z-10">
+                        <tr class="border-b border-indigo-100">
+                            <th class="text-center px-2 py-2.5 w-12 font-bold">စဉ်</th>
+                            <th class="text-left px-3 py-2.5 font-bold cursor-pointer select-none sort-th" data-sort="time" title="အချိန်အလိုက် စီမည်">
+                                <i class="far fa-clock mr-1"></i>Date & Time <i class="fas fa-sort ml-1 sort-icon"></i>
+                            </th>
+                            <th class="text-left px-3 py-2.5 font-bold"><i class="fas fa-user mr-1"></i>ထိုးသူ</th>
+                            <th class="text-left px-3 py-2.5 font-bold"><i class="fas fa-hashtag mr-1"></i>နံပါတ် / Formula</th>
+                            <th class="text-right px-3 py-2.5 font-bold cursor-pointer select-none sort-th" data-sort="amount" title="ပမာဏအလိုက် စီမည်">
+                                ပမာဏ <i class="fas fa-sort ml-1 sort-icon"></i>
+                            </th>
+                            <th class="text-center px-3 py-2.5 font-bold">အခြေအနေ</th>
+                            <th class="text-center px-2 py-2.5 w-28 font-bold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
 
             <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 text-sm">
                 <span class="text-gray-500">Showing <span id="showCount">0</span> / <span id="totalCount">0</span></span>
@@ -473,6 +551,16 @@
             return { date: t || '—', time: '' };
         }
 
+        function mmtDateStr(date) {
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Yangon', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(date);
+            const get = (t) => parts.find((p) => p.type === t).value;
+            return `${get('year')}-${get('month')}-${get('day')}`;
+        }
+        function todayStr() { return mmtDateStr(new Date()); }
+        function yesterdayStr() { return mmtDateStr(new Date(Date.now() - 24 * 3600 * 1000)); }
+
         function getRecordHit(r) {
             const t = String(r.time || '');
             const hour = parseInt(t.slice(11, 13), 10);
@@ -484,17 +572,24 @@
             return null;
         }
 
-        function render() {
+        let sortState = { key: 'time', dir: 'desc' };
+
+        function getFiltered() {
             const q = document.getElementById('searchInput').value.toLowerCase().trim();
             const type = document.getElementById('typeFilter').value;
             const period = document.getElementById('periodState').value;
-            const body = document.getElementById('recordsBody');
-            body.innerHTML = '';
-            let shown = 0;
-            let grand = 0;
-
-            const filtered = RECORDS.slice().reverse().filter((r) => {
+            const dateState = document.getElementById('dateState').value;
+            const fromDate = document.getElementById('dateFrom').value;
+            const toDate = document.getElementById('dateTo').value;
+            return RECORDS.filter((r) => {
                 if (type && r.formula !== type) return false;
+                const datePart = String(r.time).slice(0, 10);
+                if (dateState === 'today' && datePart !== todayStr()) return false;
+                if (dateState === 'yesterday' && datePart !== yesterdayStr()) return false;
+                if (dateState === 'custom') {
+                    if (fromDate && datePart < fromDate) return false;
+                    if (toDate && datePart > toDate) return false;
+                }
                 if (period !== 'all') {
                     const hour = parseInt(String(r.time).slice(11, 13), 10);
                     const isAM = !isNaN(hour) && hour < 12;
@@ -506,159 +601,179 @@
                 }
                 return true;
             });
+        }
 
-            // Group non-error records by (bettor_name + time)
-            const groups = [];
-            const groupMap = new Map();
-            const errors = [];
-            filtered.forEach((r) => {
-                if (r.is_error) { errors.push(r); return; }
-                const key = `${r.bettor_name || '—'}||${r.time}`;
-                if (!groupMap.has(key)) {
-                    const g = { name: r.bettor_name || '—', time: r.time, records: [] };
-                    groupMap.set(key, g);
-                    groups.push(g);
+        function sortRecords(arr) {
+            const { key, dir } = sortState;
+            return arr.slice().sort((a, b) => {
+                let cmp;
+                if (key === 'amount') {
+                    const av = (a.count || 1) * (a.amount || 0);
+                    const bv = (b.count || 1) * (b.amount || 0);
+                    cmp = av - bv;
+                } else {
+                    cmp = String(a.time).localeCompare(String(b.time));
                 }
-                groupMap.get(key).records.push(r);
+                return dir === 'asc' ? cmp : -cmp;
+            });
+        }
+
+        function recordStatus(r) {
+            if (r.is_canceled) return { label: 'Cancelled', icon: 'fa-ban', color: 'bg-gray-200 text-gray-600' };
+            if (r.is_error) return { label: 'Invalid', icon: 'fa-exclamation-triangle', color: 'bg-red-100 text-red-600' };
+            const hit = getRecordHit(r);
+            if (hit) return { label: `Winner (${hit.num})`, icon: 'fa-trophy', color: 'bg-amber-100 text-amber-700' };
+            return { label: 'Active', icon: 'fa-check-circle', color: 'bg-emerald-100 text-emerald-700' };
+        }
+
+        function render() {
+            const body = document.getElementById('recordsBody');
+            const filtered = sortRecords(getFiltered());
+            let grand = 0;
+            let sales = 0;
+            let payout = 0;
+            let winCount = 0;
+
+            const active = filtered.filter((r) => !r.is_canceled);
+            active.forEach((r) => {
+                const total = (r.count || 1) * (r.amount || 0);
+                sales += total;
+                const hit = getRecordHit(r);
+                if (hit) { payout += hit.amount; winCount++; }
             });
 
-            // Render errors first (each as its own card)
-            errors.forEach((r) => {
-                shown++;
-                const card = document.createElement('div');
-                card.className = 'bg-red-50 border border-red-200 rounded-xl p-3 shadow-sm flex flex-col gap-2 transition hover:shadow-md';
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="inline-flex items-center gap-1.5 text-red-600 font-bold text-sm min-w-0">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span class="truncate">Invalid</span>
-                        </span>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <button type="button" title="Share to Viber" data-group="${r.id}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110">
+            body.innerHTML = filtered.map((r, idx) => {
+                const { date, time } = formatDateParts(r.time);
+                const cnt = r.count || 1;
+                const total = cnt * (r.amount || 0);
+                const hit = getRecordHit(r);
+                const canceled = !!r.is_canceled;
+                const status = recordStatus(r);
+                const nums = (r.numbers || []).join(', ') || (r.is_error ? '<span class="italic">—</span>' : '—');
+
+                if (!canceled) grand += total;
+
+                return `
+                    <tr class="hover:bg-indigo-50/40 transition ${canceled ? 'bg-gray-50 opacity-60' : ''} ${hit && !canceled ? 'bg-amber-50/70' : ''}">
+                        <td class="px-2 py-2.5 text-center text-xs font-bold ${canceled ? 'text-gray-400' : 'text-gray-500'}">${idx + 1}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                            <div class="text-[13px] font-semibold text-gray-800">${date}</div>
+                            <div class="text-[11px] text-gray-400 font-mono">${time}</div>
+                        </td>
+                        <td class="px-3 py-2.5">
+                            <div class="font-medium text-gray-700">${r.bettor_name || '—'}</div>
+                            ${r.is_error ? `<div class="text-[11px] text-red-500 font-mono truncate max-w-[200px]" title="${r.original}">${r.original}</div>` : ''}
+                        </td>
+                        <td class="px-3 py-2.5">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="inline-block bg-indigo-100 text-indigo-700 text-[11px] font-bold px-1.5 py-0.5 rounded">${r.formula}</span>
+                                <span class="text-xs text-gray-600 font-medium">${nums}</span>
+                            </div>
+                            ${hit && !canceled ? `<div class="text-[11px] font-semibold text-amber-600 mt-1"><i class="fas fa-trophy mr-1"></i>${hit.num} @ ${hit.label} → ${hit.amount.toLocaleString()} Ks</div>` : ''}
+                        </td>
+                        <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                            <div class="font-bold ${canceled ? 'text-gray-400 line-through' : 'text-gray-800'}">${total.toLocaleString()} Ks</div>
+                            <div class="text-[11px] text-gray-400">@ ${r.amount.toLocaleString()} Ks × ${cnt}</div>
+                        </td>
+                        <td class="px-3 py-2.5 text-center">
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${status.color}">
+                                <i class="fas ${status.icon}"></i> ${status.label}
+                            </span>
+                        </td>
+                        <td class="px-2 py-2.5 text-center whitespace-nowrap">
+                            <button type="button" title="Cancel / Restore" data-cancel="${r.id}" class="cancel-btn text-gray-300 hover:text-orange-500 transition transform hover:scale-110">
+                                <i class="fas ${canceled ? 'fa-undo-alt' : 'fa-ban'}"></i>
+                            </button>
+                            <button type="button" title="Share to Viber" data-group="${r.id}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110 ml-1.5">
                                 <i class="fab fa-viber text-base"></i>
                             </button>
-                            <span class="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">#${r.id}</span>
-                            <button type="button" title="Delete" data-group="${r.id}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110">
-                                <i class="fas fa-trash-alt text-base"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="text-sm text-red-600 font-medium break-words">${r.original}</div>
-                `;
-                body.appendChild(card);
-            });
-
-            // Render grouped cards
-            groups.forEach((g) => {
-                const { date, time } = formatDateParts(g.time);
-                const ids = g.records.map((r) => r.id).join(', ');
-                let groupTotal = 0;
-                let groupAmount = 0;
-                const allNums = new Set();
-                const winNums = new Set();
-                const winInfo = {};
-                let winTotal = 0;
-                const overNums = new Set();
-                let firstId = g.records[0].id;
-
-                const rows = g.records.map((r) => {
-                    const total = r.count * r.amount;
-                    groupTotal += total;
-                    groupAmount += r.amount;
-                    (r.numbers || []).forEach((n) => {
-                        allNums.add(n);
-                        if (overItemFor(n)) overNums.add(n);
-                    });
-                    const hit = getRecordHit(r);
-                    if (hit) {
-                        winNums.add(hit.num);
-                        winTotal += hit.amount;
-                        if (!winInfo[hit.num]) winInfo[hit.num] = { label: hit.label, amount: 0 };
-                        winInfo[hit.num].amount += hit.amount;
-                    }
-                    if (r.id < firstId) firstId = r.id;
-                    return `
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded shrink-0">${r.formula}</span>
-                            <span class="text-[11px] text-gray-400 font-mono truncate flex-1 min-w-0" title="${r.original}">${r.original}</span>
-                            <span class="font-bold text-green-700 shrink-0">${r.amount.toLocaleString()} Ks</span>
-                        </div>
-                    `;
-                }).join('');
-
-                const numChips = [...allNums].map((n) =>
-                    `<span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded${winNums.has(n) ? ' win-chip' : overNums.has(n) ? ' over-chip' : ''}">${n}${winNums.has(n) ? ' 🎯' : overNums.has(n) ? ' ⚠️' : ''}</span>`
-                ).join(' ');
-
-                const overDetails = [...overNums].map((n) => {
-                    const o = overItemFor(n);
-                    return `<b>${o.num}</b> (${o.amount.toLocaleString()}/${o.limit.toLocaleString()} Ks, +${o.over.toLocaleString()} Ks)`;
-                }).join('; ');
-                const overBanner = overNums.size ? `
-                    <div class="over-banner" title="ဒီဂဏန်းတွေက limit ထက်ကျော်နေလို့ သတိထားပါ">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Limit ကျော်နေသည်: ${overDetails}
-                    </div>` : '';
-
-                const hitBanner = winTotal > 0 ? `
-                    <div class="hit-banner">
-                        <i class="fas fa-trophy"></i>
-                        ပေါက်ဂဏန်း <b>${[...winNums].join(', ')}</b> · ဆု <b>${winTotal.toLocaleString()} Ks</b>
-                        <span class="hit-tooltip">${Object.entries(winInfo).map(([n, v]) => `${n} က ${v.label} draw မှာ ဝင်ခဲ့ပြီး ${PAYOUT_RATE}x = ${v.amount.toLocaleString()} Ks`).join('<br>')}</span>
-                    </div>` : '';
-
-                shown += g.records.length;
-                grand += groupTotal;
-
-                const card = document.createElement('div');
-                card.className = 'bg-white border rounded-xl p-3 shadow-sm flex flex-col gap-2 transition hover:shadow-md ' + (winTotal > 0 ? 'border-amber-400 ring-1 ring-amber-300 hover:border-amber-500' : 'border-gray-200 hover:border-indigo-200');
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="inline-flex items-center gap-1.5 text-indigo-700 font-bold text-sm min-w-0">
-                            <i class="fas fa-user"></i>
-                            <span class="truncate">${g.name}</span>
-                        </span>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <button type="button" title="Share to Viber" data-group="${ids}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110">
-                                <i class="fab fa-viber text-base"></i>
-                            </button>
-                            <span class="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full" title="IDs: ${ids}">#${firstId}${g.records.length > 1 ? ` +${g.records.length - 1}` : ''}</span>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1.5">${rows}</div>
-                    <div class="flex flex-wrap gap-1">${numChips}</div>
-                    ${hitBanner}
-                    ${overBanner}
-                    <div class="border-t border-dashed border-gray-200 pt-2 flex items-center justify-between gap-2 text-sm">
-                        <div>
-                            <div class="text-[11px] text-gray-400 font-semibold uppercase">ငွေပမာဏ</div>
-                            <div class="font-bold text-green-700">${groupAmount.toLocaleString()} Ks</div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button type="button" title="Edit" data-group="${ids}" class="edit-group-btn text-gray-300 hover:text-indigo-600 transition transform hover:scale-110">
+                            <button type="button" title="Edit" data-group="${r.id}" class="edit-group-btn text-gray-300 hover:text-indigo-600 transition transform hover:scale-110 ml-1.5">
                                 <i class="fas fa-edit text-base"></i>
                             </button>
-                            <button type="button" title="Delete" data-group="${ids}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110">
+                            <button type="button" title="Delete" data-group="${r.id}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110 ml-1.5">
                                 <i class="fas fa-trash-alt text-base"></i>
                             </button>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-[11px] text-gray-400 font-semibold uppercase">စုစုပေါင်း</div>
-                            <div class="font-extrabold text-gray-800">${groupTotal.toLocaleString()} Ks</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between gap-2 text-[11px] text-gray-400 border-t border-gray-100 pt-1.5">
-                        <span><i class="far fa-clock mr-1"></i>${time}</span>
-                        <span><i class="far fa-calendar mr-1"></i>${date}</span>
-                    </div>
+                        </td>
+                    </tr>
                 `;
-                body.appendChild(card);
-            });
+            }).join('');
 
-            document.getElementById('showCount').textContent = shown;
+            document.getElementById('sumSales').textContent = sales.toLocaleString() + ' Ks';
+            document.getElementById('sumPayout').textContent = payout.toLocaleString() + ' Ks';
+            const net = sales - payout;
+            const netEl = document.getElementById('sumNet');
+            netEl.textContent = net.toLocaleString() + ' Ks';
+            netEl.className = 'text-lg sm:text-xl font-bold mt-1 ' + (net < 0 ? 'text-red-600' : 'text-green-600');
+            document.getElementById('sumCount').textContent = filtered.length + ' ခု';
+
+            document.getElementById('showCount').textContent = filtered.length;
             document.getElementById('totalCount').textContent = RECORDS.length;
-            document.getElementById('grandTotal').textContent = grand.toLocaleString();
+            document.getElementById('grandTotal').textContent = sales.toLocaleString();
             document.getElementById('recCount').textContent = RECORDS.length;
+        }
+
+        function updateSortIcons() {
+            document.querySelectorAll('.sort-th').forEach((th) => {
+                const icon = th.querySelector('.sort-icon');
+                icon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down');
+                if (th.dataset.sort === sortState.key) {
+                    icon.classList.add(sortState.dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+                    th.classList.add('text-indigo-900');
+                } else {
+                    icon.classList.add('fa-sort');
+                    th.classList.remove('text-indigo-900');
+                }
+            });
+        }
+
+        document.querySelectorAll('.sort-th').forEach((th) => {
+            th.addEventListener('click', () => {
+                const key = th.dataset.sort;
+                if (sortState.key === key) {
+                    sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortState.key = key;
+                    sortState.dir = 'desc';
+                }
+                updateSortIcons();
+                render();
+            });
+        });
+        updateSortIcons();
+
+        function exportCsv() {
+            const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+            const rows = sortRecords(getFiltered());
+            const header = ['ID', 'Date & Time', 'Bettor', 'Formula', 'Numbers', 'Amount (Ks)', 'Count', 'Total (Ks)', 'Status', 'Win Amount (Ks)'];
+            const lines = rows.map((r) => {
+                const hit = getRecordHit(r);
+                const status = recordStatus(r).label;
+                return [r.id, r.time, r.bettor_name || '', r.formula, (r.numbers || []).join(' '), r.amount, r.count || 1, (r.count || 1) * (r.amount || 0), status, hit ? hit.amount : ''].map(esc).join(',');
+            });
+            const csv = '\ufeff' + [header.map(esc).join(','), ...lines].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `records_${todayStr()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }
+        document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+
+        function toggleCancel(id) {
+            const r = RECORDS.find((x) => x.id === id);
+            if (!r) return;
+            post('/api/toggle_cancel', { ids: String(id), canceled: r.is_canceled ? 'false' : 'true' })
+                .then((data) => {
+                    if (data.error) { alert(data.error); return; }
+                    r.is_canceled = !r.is_canceled;
+                    overLimits = computeOverLimitsFromState(data);
+                    updateOverLimitUI();
+                    render();
+                })
+                .catch((err) => alert('Error: ' + err));
         }
 
         document.getElementById('searchInput').addEventListener('input', render);
@@ -676,6 +791,52 @@
                 render();
             });
         });
+
+        // ===== Date filter buttons (All / Today / Yesterday / Custom range) =====
+        function syncDateUI() {
+            const state = document.getElementById('dateState').value;
+            document.querySelectorAll('.date-btn').forEach((b) => {
+                b.classList.toggle('active', b.dataset.date === state);
+            });
+        }
+        function applyCustomRange() {
+            const f = document.getElementById('dateFrom').value;
+            const t = document.getElementById('dateTo').value;
+            if (!f || !t) {
+                alert('From Date နှင့် To Date နှစ်ခုလုံး ရွေးပါ');
+                return false;
+            }
+            if (f > t) {
+                alert('From Date သည် To Date ထက် နောက်ကျမရပါ');
+                return false;
+            }
+            document.getElementById('dateState').value = 'custom';
+            syncDateUI();
+            render();
+            return true;
+        }
+        document.querySelectorAll('.date-btn').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const val = this.dataset.date;
+                if (val === 'custom') {
+                    applyCustomRange();
+                    return;
+                }
+                document.getElementById('dateState').value = val;
+                syncDateUI();
+                render();
+            });
+        });
+        document.getElementById('dateFrom').addEventListener('change', applyCustomRange);
+        document.getElementById('dateTo').addEventListener('change', applyCustomRange);
+        document.getElementById('dateClearBtn').addEventListener('click', () => {
+            document.getElementById('dateState').value = 'all';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            syncDateUI();
+            render();
+        });
+        syncDateUI();
 
         // ===== API helper =====
         const CSRF = document.getElementById('csrfToken').value;
@@ -695,10 +856,16 @@
             const editBtn = e.target.closest('.edit-group-btn');
             const delBtn = e.target.closest('.del-group-btn');
             const shareBtn = e.target.closest('.share-group-btn');
-            if (!editBtn && !delBtn && !shareBtn) return;
+            const cancelBtn = e.target.closest('.cancel-btn');
+            if (!editBtn && !delBtn && !shareBtn && !cancelBtn) return;
 
             if (shareBtn) {
                 shareToViber(shareBtn.dataset.group);
+                return;
+            }
+
+            if (cancelBtn) {
+                toggleCancel(Number(cancelBtn.dataset.cancel));
                 return;
             }
 

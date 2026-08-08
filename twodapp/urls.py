@@ -19,5 +19,6 @@ urlpatterns = [
     path('api/save_meta', views.api_save_meta, name='api_save_meta'),
     path('api/clear_all', views.api_clear_all, name='api_clear_all'),
     path('api/delete_logs', views.api_delete_logs, name='api_delete_logs'),
+    path('api/toggle_cancel', views.api_toggle_cancel, name='api_toggle_cancel'),
     path('api/edit_logs', views.api_edit_logs, name='api_edit_logs'),
 ]

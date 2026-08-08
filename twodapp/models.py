@@ -39,6 +39,7 @@ class OperationLog(models.Model):
     count = models.IntegerField(default=0)
     amount = models.IntegerField(default=0)
     is_error = models.BooleanField(default=False)
+    is_canceled = models.BooleanField(default=False)
     bettor_name = models.CharField(max_length=100, blank=True, default='')
     bettor_date = models.CharField(max_length=10, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)

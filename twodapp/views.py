@@ -42,6 +42,7 @@ def _serialize_log(log):
         'count': log.count,
         'amount': log.amount,
         'is_error': log.is_error,
+        'is_canceled': log.is_canceled,
         'bettor_name': log.bettor_name,
         'bettor_date': log.bettor_date,
         'time': log.created_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
@@ -265,6 +266,39 @@ def api_delete_logs(request):
     state.valid_lines = max(0, state.valid_lines - OperationLog.objects.filter(pk__in=ids, is_error=False).count())
     state.save()
     OperationLog.objects.filter(pk__in=ids).delete()
+    return JsonResponse({'ok': True, **state_payload(state)})
+
+
+@require_POST
+@api_login_required
+def api_toggle_cancel(request):
+    """Cancel or restore one or more records, adjusting the ledger accordingly.
+    Expects 'ids' (comma-separated) and 'canceled' (true/false).
+    """
+    ids_raw = request.POST.get('ids', '')
+    canceled = request.POST.get('canceled', 'true').lower() == 'true'
+    ids = [int(x) for x in ids_raw.split(',') if x.strip().isdigit()]
+    if not ids:
+        return JsonResponse({'ok': False, 'error': 'Invalid ids'})
+
+    state = GameState.get_state()
+    ledger = list(state.ledger)
+    for log in OperationLog.objects.filter(pk__in=ids):
+        if canceled == log.is_canceled:
+            continue
+        sign = -1 if canceled else 1
+        for num in log.numbers or []:
+            try:
+                idx = int(num)
+            except (ValueError, TypeError):
+                continue
+            if 0 <= idx < 100:
+                ledger[idx] = max(0, ledger[idx] + sign * log.amount)
+                state.total_amount = max(0, state.total_amount + sign * log.amount)
+        log.is_canceled = canceled
+        log.save()
+    state.ledger = ledger
+    state.save()
     return JsonResponse({'ok': True, **state_payload(state)})
 
 

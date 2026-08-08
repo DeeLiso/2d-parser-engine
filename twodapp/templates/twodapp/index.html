@@ -315,7 +315,7 @@
 ပူး 500 / power 500 / nk 500 / ညီကို 500
 25 R 500 / 02468 ခွေ 500
 2470 ကို 18 နဲ့ ကပ် r 1000
-12 500, 34 200"></textarea>
+12 500, 34 200 / 12.14.27 500"></textarea>
 
                 <div class="mt-4 grid grid-cols-2 gap-1.5 sm:gap-2">
                     <button id="btnCalculate" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm leading-tight py-2 px-1 rounded-lg shadow transition duration-200">
@@ -649,6 +649,28 @@
             return parts.length > 0;
         }
 
+        // ===== Text Cleaning (dots / punctuation → standard format) =====
+        function cleanText(text) {
+            return String(text)
+                .replace(/၊/g, ',')
+                .replace(/။/g, ',')
+                .split('\n')
+                .map((line) => {
+                    let l = line.replace(/\.{2,}/g, '.').trim();
+                    l = l.replace(/^\.+/, '');
+                    l = l.replace(/\.+$/, '');
+                    l = l.replace(/\s\./g, ' ');
+                    l = l.replace(/\.\s/g, ' ');
+                    l = l.replace(/\.([rRအာ])/g, ' $1 ');
+                    l = l.replace(/([rRအာ])\./g, '$1 ');
+                    l = l.replace(/(\d{2}(?:\.\d{2})+)\.(\d{3,})/g, (m, a, b) => a.match(/\d{2}/g).join(', ') + ' ' + b);
+                    l = l.replace(/(\d{2}(?:\.\d{2})+)(?!\d)/g, (m) => m.match(/\d{2}/g).join(', '));
+                    l = l.replace(/,{2,}/g, ',');
+                    return l.trim();
+                })
+                .join('\n');
+        }
+
         // ===== Calculate / Add / Delete =====
         async function calculate(action) {
             const text = document.getElementById('viberInput').value;
@@ -737,18 +759,100 @@
             }
         });
 
+        // ===== Clean pasted Viber text before it reaches the parser =====
+        document.getElementById('viberInput').addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text') || '';
+            const cleaned = cleanText(pasted);
+            const el = document.getElementById('viberInput');
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            el.value = el.value.slice(0, start) + cleaned + el.value.slice(end);
+            el.selectionStart = el.selectionEnd = start + cleaned.length;
+            if (cleaned !== pasted) logMessage('Pasted text cleaned → standard format ✓', 'info');
+        });
+
+        // ===== Clean the whole field on input change (blur) =====
+        document.getElementById('viberInput').addEventListener('change', () => {
+            const el = document.getElementById('viberInput');
+            const cleaned = cleanText(el.value);
+            if (cleaned !== el.value) {
+                el.value = cleaned;
+                logMessage('Input cleaned → standard format ✓', 'info');
+            }
+        });
+
         // ===== Paste from Clipboard =====
-        document.getElementById('btnAdd').addEventListener('click', async () => {
-            try {
-                const text = await navigator.clipboard.readText();
-                if (text && text.trim()) {
-                    document.getElementById('viberInput').value = text;
-                    logMessage('Pasted from clipboard ✓', 'success');
+        // Reads clipboard text using the modern API, falling back to the
+        // classic hidden-textarea + execCommand('paste') trick so it also
+        // works outside secure contexts (e.g. phone over LAN).
+        function readClipboardText() {
+            return new Promise((resolve) => {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    navigator.clipboard.readText()
+                        .then(resolve)
+                        .catch(() => legacyPaste(resolve));
+                    return;
+                }
+                legacyPaste(resolve);
+            });
+        }
+
+        function legacyPaste(resolve) {
+            const ta = document.createElement('textarea');
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0;';
+            document.body.appendChild(ta);
+            ta.focus();
+
+            let done = false;
+            const finish = (val) => {
+                if (done) return;
+                done = true;
+                clearTimeout(fallbackTimer);
+                document.removeEventListener('paste', onPaste);
+                if (document.body.contains(ta)) document.body.removeChild(ta);
+                resolve(val);
+            };
+            const onPaste = (e) => {
+                if (e && e.clipboardData && e.clipboardData.getData) {
+                    finish(e.clipboardData.getData('text') || '');
                 } else {
-                    logMessage('Clipboard ထဲ text မရှိပါ', 'info');
+                    setTimeout(() => finish(ta.value || ''), 0);
+                }
+            };
+            const fallbackTimer = setTimeout(() => finish(ta.value || ''), 500);
+            document.addEventListener('paste', onPaste);
+            let ok = false;
+            try {
+                ok = document.execCommand('paste');
+            } catch (e) {
+                ok = false;
+            }
+            if (!ok) finish('');
+        }
+
+        document.getElementById('btnAdd').addEventListener('click', async () => {
+            const btn = document.getElementById('btnAdd');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+            try {
+                const text = await readClipboardText();
+                if (text && text.trim()) {
+                    const cleaned = cleanText(text);
+                    const el = document.getElementById('viberInput');
+                    el.value = cleaned;
+                    el.focus();
+                    logMessage(cleaned !== text ? 'Pasted + cleaned ✓' : 'Pasted from clipboard ✓', 'success');
+                } else {
+                    logMessage('Clipboard ထဲ text မရှိပါ — စာကို Copy ကူးပြီး နောက်တစ်ကြိမ် နှိပ်ပါ', 'info');
                 }
             } catch (err) {
                 logMessage('Clipboard access failed: ' + err, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
             }
         });
 
