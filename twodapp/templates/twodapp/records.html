@@ -351,9 +351,16 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <h2 class="text-base sm:text-lg font-bold text-gray-800"><i class="fas fa-table mr-2 text-indigo-500"></i>မှတ်တမ်းဇယား</h2>
+                <h2 class="text-base sm:text-lg font-bold text-gray-800"><i class="fas fa-id-card mr-2 text-indigo-500"></i>မှတ်တမ်းကတ်များ</h2>
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="hidden sm:inline text-[11px] text-gray-400"><i class="fas fa-sort mr-1"></i>ခေါင်းစဉ် နှိပ်၍ စီရန်</span>
+                    <div class="flex items-center gap-1.5 bg-gray-100 rounded-lg p-1">
+                        <button id="sortTimeBtn" type="button" class="sort-btn text-[11px] font-bold px-2.5 py-1.5 rounded-md bg-white text-gray-600 transition" data-sort="time">
+                            <i class="far fa-clock mr-1"></i>Date
+                        </button>
+                        <button id="sortAmountBtn" type="button" class="sort-btn text-[11px] font-bold px-2.5 py-1.5 rounded-md bg-white text-gray-600 transition" data-sort="amount">
+                            <i class="fas fa-coins mr-1"></i>Amt
+                        </button>
+                    </div>
                     <button id="exportCsvBtn" title="CSV ဖိုင် ထုတ်ယူမည်"
                             class="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition transform">
                         <i class="fas fa-file-csv"></i> CSV ထုတ်မည်
@@ -361,26 +368,7 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-gray-200">
-                <table class="w-full text-sm min-w-[760px]">
-                    <thead class="sticky top-0 bg-indigo-50 text-indigo-700 z-10">
-                        <tr class="border-b border-indigo-100">
-                            <th class="text-center px-2 py-2.5 w-12 font-bold">စဉ်</th>
-                            <th class="text-left px-3 py-2.5 font-bold cursor-pointer select-none sort-th" data-sort="time" title="အချိန်အလိုက် စီမည်">
-                                <i class="far fa-clock mr-1"></i>Date & Time <i class="fas fa-sort ml-1 sort-icon"></i>
-                            </th>
-                            <th class="text-left px-3 py-2.5 font-bold"><i class="fas fa-user mr-1"></i>ထိုးသူ</th>
-                            <th class="text-left px-3 py-2.5 font-bold"><i class="fas fa-hashtag mr-1"></i>နံပါတ် / Formula</th>
-                            <th class="text-right px-3 py-2.5 font-bold cursor-pointer select-none sort-th" data-sort="amount" title="ပမာဏအလိုက် စီမည်">
-                                ပမာဏ <i class="fas fa-sort ml-1 sort-icon"></i>
-                            </th>
-                            <th class="text-center px-3 py-2.5 font-bold">အခြေအနေ</th>
-                            <th class="text-center px-2 py-2.5 w-28 font-bold">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsBody" class="divide-y divide-gray-100"></tbody>
-                </table>
-            </div>
+            <div id="recordsBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
 
             <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 text-sm">
                 <span class="text-gray-500">Showing <span id="showCount">0</span> / <span id="totalCount">0</span></span>
@@ -654,47 +642,49 @@
                 if (!canceled) grand += total;
 
                 return `
-                    <tr class="hover:bg-indigo-50/40 transition ${canceled ? 'bg-gray-50 opacity-60' : ''} ${hit && !canceled ? 'bg-amber-50/70' : ''}">
-                        <td class="px-2 py-2.5 text-center text-xs font-bold ${canceled ? 'text-gray-400' : 'text-gray-500'}">${idx + 1}</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap">
-                            <div class="text-[13px] font-semibold text-gray-800">${date}</div>
-                            <div class="text-[11px] text-gray-400 font-mono">${time}</div>
-                        </td>
-                        <td class="px-3 py-2.5">
-                            <div class="font-medium text-gray-700">${r.bettor_name || '—'}</div>
-                            ${r.is_error ? `<div class="text-[11px] text-red-500 font-mono truncate max-w-[200px]" title="${r.original}">${r.original}</div>` : ''}
-                        </td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <span class="inline-block bg-indigo-100 text-indigo-700 text-[11px] font-bold px-1.5 py-0.5 rounded">${r.formula}</span>
-                                <span class="text-xs text-gray-600 font-medium">${nums}</span>
+                    <div class="bg-white rounded-xl border ${hit && !canceled ? 'border-amber-300 bg-amber-50/60 shadow-md' : 'border-gray-200 shadow-sm'} ${canceled ? 'border-gray-200 bg-gray-50 opacity-60' : ''} p-3 flex flex-col gap-2.5 transition hover:shadow-md hover:-translate-y-0.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-gray-800 truncate">${r.bettor_name || '—'}</span>
+                                    <span class="text-[10px] text-gray-400 font-semibold bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">#${r.id}</span>
+                                </div>
+                                <div class="text-[11px] text-gray-400 font-mono mt-0.5"><i class="far fa-clock mr-1"></i>${date} · ${time}</div>
                             </div>
-                            ${hit && !canceled ? `<div class="text-[11px] font-semibold text-amber-600 mt-1"><i class="fas fa-trophy mr-1"></i>${hit.num} @ ${hit.label} → ${hit.amount.toLocaleString()} Ks</div>` : ''}
-                        </td>
-                        <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                            <div class="font-bold ${canceled ? 'text-gray-400 line-through' : 'text-gray-800'}">${total.toLocaleString()} Ks</div>
-                            <div class="text-[11px] text-gray-400">@ ${r.amount.toLocaleString()} Ks × ${cnt}</div>
-                        </td>
-                        <td class="px-3 py-2.5 text-center">
-                            <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${status.color}">
+                            <div class="text-right shrink-0">
+                                <div class="font-bold text-base ${canceled ? 'text-gray-400 line-through' : 'text-gray-800'}">${total.toLocaleString()} Ks</div>
+                                <div class="text-[10px] text-gray-400">@ ${r.amount.toLocaleString()} × ${cnt}</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="inline-block bg-indigo-100 text-indigo-700 text-[11px] font-bold px-1.5 py-0.5 rounded">${r.formula}</span>
+                            <span class="text-xs text-gray-600 font-medium">${nums}</span>
+                        </div>
+                        ${hit && !canceled ? `<div class="text-[11px] font-semibold text-amber-600"><i class="fas fa-trophy mr-1"></i>${hit.num} @ ${hit.label} → ${hit.amount.toLocaleString()} Ks</div>` : ''}
+                        ${r.is_error ? `<div class="text-[11px] text-red-500 font-mono truncate" title="${r.original}">${r.original}</div>` : ''}
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2 mt-auto">
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${status.color}">
                                 <i class="fas ${status.icon}"></i> ${status.label}
                             </span>
-                        </td>
-                        <td class="px-2 py-2.5 text-center whitespace-nowrap">
-                            <button type="button" title="Cancel / Restore" data-cancel="${r.id}" class="cancel-btn text-gray-300 hover:text-orange-500 transition transform hover:scale-110">
-                                <i class="fas ${canceled ? 'fa-undo-alt' : 'fa-ban'}"></i>
-                            </button>
-                            <button type="button" title="Share to Viber" data-group="${r.id}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110 ml-1.5">
-                                <i class="fab fa-viber text-base"></i>
-                            </button>
-                            <button type="button" title="Edit" data-group="${r.id}" class="edit-group-btn text-gray-300 hover:text-indigo-600 transition transform hover:scale-110 ml-1.5">
-                                <i class="fas fa-edit text-base"></i>
-                            </button>
-                            <button type="button" title="Delete" data-group="${r.id}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110 ml-1.5">
-                                <i class="fas fa-trash-alt text-base"></i>
-                            </button>
-                        </td>
-                    </tr>
+                            <div class="flex items-center gap-2.5">
+                                <button type="button" title="Cancel / Restore" data-cancel="${r.id}" class="cancel-btn text-gray-300 hover:text-orange-500 transition transform hover:scale-110">
+                                    <i class="fas ${canceled ? 'fa-undo-alt' : 'fa-ban'}"></i>
+                                </button>
+                                <button type="button" title="Share to Viber" data-group="${r.id}" class="share-group-btn text-gray-300 hover:text-purple-600 transition transform hover:scale-110">
+                                    <i class="fab fa-viber text-base"></i>
+                                </button>
+                                <button type="button" title="Share to Messenger" data-group="${r.id}" class="share-msgr-btn text-gray-300 hover:text-blue-600 transition transform hover:scale-110">
+                                    <i class="fab fa-facebook-messenger text-base"></i>
+                                </button>
+                                <button type="button" title="Edit" data-group="${r.id}" class="edit-group-btn text-gray-300 hover:text-indigo-600 transition transform hover:scale-110">
+                                    <i class="fas fa-edit text-base"></i>
+                                </button>
+                                <button type="button" title="Delete" data-group="${r.id}" class="del-group-btn text-gray-300 hover:text-red-600 transition transform hover:scale-110">
+                                    <i class="fas fa-trash-alt text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }).join('');
 
@@ -713,22 +703,21 @@
         }
 
         function updateSortIcons() {
-            document.querySelectorAll('.sort-th').forEach((th) => {
-                const icon = th.querySelector('.sort-icon');
-                icon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down');
-                if (th.dataset.sort === sortState.key) {
-                    icon.classList.add(sortState.dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
-                    th.classList.add('text-indigo-900');
+            document.querySelectorAll('.sort-btn').forEach((btn) => {
+                const isActive = btn.dataset.sort === sortState.key;
+                if (isActive) {
+                    btn.classList.add('bg-indigo-600', 'text-white', 'shadow');
+                    btn.classList.remove('bg-white', 'text-gray-600');
                 } else {
-                    icon.classList.add('fa-sort');
-                    th.classList.remove('text-indigo-900');
+                    btn.classList.add('bg-white', 'text-gray-600');
+                    btn.classList.remove('bg-indigo-600', 'text-white', 'shadow');
                 }
             });
         }
 
-        document.querySelectorAll('.sort-th').forEach((th) => {
-            th.addEventListener('click', () => {
-                const key = th.dataset.sort;
+        document.querySelectorAll('.sort-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.sort;
                 if (sortState.key === key) {
                     sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
                 } else {
@@ -856,11 +845,17 @@
             const editBtn = e.target.closest('.edit-group-btn');
             const delBtn = e.target.closest('.del-group-btn');
             const shareBtn = e.target.closest('.share-group-btn');
+            const msgrBtn = e.target.closest('.share-msgr-btn');
             const cancelBtn = e.target.closest('.cancel-btn');
-            if (!editBtn && !delBtn && !shareBtn && !cancelBtn) return;
+            if (!editBtn && !delBtn && !shareBtn && !msgrBtn && !cancelBtn) return;
 
             if (shareBtn) {
                 shareToViber(shareBtn.dataset.group);
+                return;
+            }
+
+            if (msgrBtn) {
+                shareToMessenger(msgrBtn.dataset.group);
                 return;
             }
 
@@ -925,6 +920,14 @@
             const text = buildShareText(idList);
             if (!text) return;
             const url = 'viber://forward?text=' + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        function shareToMessenger(ids) {
+            const idList = ids.split(',').map(Number);
+            const text = buildShareText(idList);
+            if (!text) return;
+            const url = 'fb-messenger://share/?text=' + encodeURIComponent(text);
             window.open(url, '_blank');
         }
 

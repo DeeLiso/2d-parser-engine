@@ -168,28 +168,28 @@ PATTERNS = [
         'process': lambda m: gen_r(m.group(1)),
     },
     {
-        # Patshee: e.g. 5 p 500
+        # Patshee: e.g. 5 p 500, or 26 ပါတ် 1000 (head of 2 + tail of 6)
         'name': 'Patshee',
-        'regex': re.compile(r'^(\d)\s*(ပတ်|ပတ်သီး|ပါ|အပါ|p)\s*(\d+)$'),
-        'process': lambda m: _dedupe(gen_htek(m.group(1)) + gen_nauk(m.group(1))),
+        'regex': re.compile(r'^(\d{1,2})\s*(ပတ်သီး|ပါတ်|ပတ်|အပါ|ပါ|p)\s*(\d+)$'),
+        'process': lambda m: _dedupe(gen_htek(m.group(1)[0]) + gen_nauk(m.group(1)[-1])),
     },
     {
-        # Hteik: e.g. 5 t 500
+        # Hteik: e.g. 5 t 500, or 26 ထိပ် 500 (head digit of 26 -> 20-29)
         'name': 'Hteik',
-        'regex': re.compile(r'^(\d)\s*(ထိပ်|t)\s*(\d+)$'),
-        'process': lambda m: gen_htek(m.group(1)),
+        'regex': re.compile(r'^(\d{1,2})\s*(ထိပ်|t)\s*(\d+)$'),
+        'process': lambda m: gen_htek(m.group(1)[0]),
     },
     {
-        # Nauk: e.g. 5 n 500
+        # Nauk: e.g. 5 n 500, or 26 နောက် 500 (tail digit of 26 -> 06,16,...,96)
         'name': 'Nauk',
-        'regex': re.compile(r'^(\d)\s*(နောက်|နောက်ပိတ်|န|n)\s*(\d+)$'),
-        'process': lambda m: gen_nauk(m.group(1)),
+        'regex': re.compile(r'^(\d{1,2})\s*(နောက်|နောက်ပိတ်|န|n)\s*(\d+)$'),
+        'process': lambda m: gen_nauk(m.group(1)[-1]),
     },
     {
-        # Brake: e.g. 5 b 500
+        # Brake: e.g. 5 b 500, or 26 ဘရိတ် 500 (sum of digits 2+6=8)
         'name': 'Brake',
-        'regex': re.compile(r'^(\d)\s*(ဘရိတ်|bk|b)\s*(\d+)$'),
-        'process': lambda m: gen_brake(m.group(1)),
+        'regex': re.compile(r'^(\d{1,2})\s*(ဘရိတ်|bk|b)\s*(\d+)$'),
+        'process': lambda m: gen_brake(str((int(m.group(1)[0]) + int(m.group(1)[-1])) % 10)),
     },
     {
         # Puu: e.g. ပူး 500
