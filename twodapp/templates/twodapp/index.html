@@ -6,6 +6,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2D FPEngine</title>
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#4338ca">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="2D Parser">
+    <link rel="apple-touch-icon" href="{% static 'icon-192.png' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="{% static 'js/security.js' %}" defer></script>
@@ -32,32 +38,6 @@
         .overflow-y-auto,
         .overflow-x-auto {
             -webkit-overflow-scrolling: touch;
-        }
-
-        #slideMenu {
-            transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out, visibility 0.25s;
-            transform: translateY(-8px);
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        #slideMenu.open {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        #overlay {
-            transition: opacity 0.3s ease-in-out;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        #overlay.open {
-            opacity: 1;
-            pointer-events: auto;
         }
 
         @keyframes pulse-red {
@@ -264,65 +244,6 @@
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-14 sm:h-16 gap-1.5">
                 <div class="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-                    <div class="relative shrink-0">
-                        <button id="menuBtn"
-                            class="p-2 rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-white shrink-0">
-                            <i class="fas fa-bars text-xl"></i>
-                        </button>
-
-                        <!-- Slide Menu (Settings) - drops down below top button -->
-                        <div id="slideMenu"
-                            class="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-white shadow-2xl z-50 flex flex-col overflow-y-auto max-h-[min(80vh,600px)] rounded-xl border border-gray-100">
-                            <div
-                                class="p-5 border-b border-gray-200 bg-indigo-50 flex justify-between items-center rounded-t-xl">
-                                <h2 class="text-xl font-bold text-indigo-800"><i class="fas fa-cogs mr-2"></i> Settings
-                                </h2>
-                                <button id="closeMenuBtn" class="text-gray-500 hover:text-red-500 focus:outline-none">
-                                    <i class="fas fa-times text-2xl"></i>
-                                </button>
-                            </div>
-
-                            <div class="p-5 space-y-4 flex-grow">
-                                <a href="/records/"
-                                    class="flex items-center gap-3 p-3 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition">
-                                    <span class="text-indigo-600"><i class="fas fa-list-ol text-lg"></i></span>
-                                    <span class="font-bold text-indigo-800">မှတ်တမ်းစာရင်း (Records)</span>
-                                </a>
-                                <a href="/ledger/"
-                                    class="flex items-center gap-3 p-3 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition">
-                                    <span class="text-indigo-600"><i class="fas fa-th text-lg"></i></span>
-                                    <span class="font-bold text-indigo-800">ဒိုင် Ledger (00-99)</span>
-                                </a>
-                                <a href="/limit/"
-                                    class="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 transition transform hover:scale-[1.02]">
-                                    <span class="text-red-600"><i
-                                            class="fas fa-exclamation-triangle text-lg animate-pulse"></i></span>
-                                    <span class="font-bold text-red-700">Limit ဂဏန်းများ</span>
-                                </a>
-
-                                <hr>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Adjust Font
-                                        Size</label>
-                                    <input type="range" id="fontSizeSlider" min="12" max="24" value="16"
-                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                                        <span>A-</span>
-                                        <span>Standard</span>
-                                        <span>A+</span>
-                                    </div>
-                                </div>
-
-                                <hr>
-
-                                <button id="clearAllBtn"
-                                    class="w-full bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 font-bold transition shadow-md">
-                                    <i class="fas fa-trash-alt mr-2"></i> Clear All Data
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                     <span class="font-bold text-sm sm:text-xl tracking-tight truncate min-w-0">2D Formula Parser
                         Engine</span>
                 </div>
@@ -388,6 +309,35 @@
         </div>
     </div>
 
+    <!-- Button Navbar -->
+    <div class="bg-indigo-50 border-b border-indigo-200 overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-3 py-2 flex items-center gap-2 min-w-max">
+            <a href="/records/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-list-ol"></i> မှတ်တမ်း
+            </a>
+            <a href="/ledger/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-th"></i> Ledger
+            </a>
+            <a href="/limit/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-exclamation-triangle"></i> Limit
+            </a>
+            <span class="w-px h-5 bg-indigo-300 shrink-0"></span>
+            <div class="inline-flex items-center gap-1.5 text-xs text-gray-600 shrink-0">
+                <i class="fas fa-font text-[10px]"></i>
+                <input type="range" id="fontSizeSlider" min="12" max="24" value="16"
+                    class="w-20 h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <span class="w-px h-5 bg-indigo-300 shrink-0"></span>
+            <button id="clearAllBtn"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-trash-alt"></i> Clear
+            </button>
+        </div>
+    </div>
+
     <!-- Over Limit Alert Strip -->
     <div id="overLimitStrip" class="hidden bg-red-600 text-white overflow-x-auto shadow-md">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center gap-3">
@@ -396,9 +346,6 @@
             <div id="overLimitStripList" class="flex gap-2 whitespace-nowrap py-0.5"></div>
         </div>
     </div>
-
-    <!-- Overlay (dims page behind dropdown menu) -->
-    <div id="overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40"></div>
 
     <!-- Main Content Area -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex flex-col lg:flex-row gap-6">
@@ -615,8 +562,6 @@
         let validLinesCount = {{ valid_lines }};
 
         const CSRF = document.getElementById('csrfToken').value;
-        const slideMenu = document.getElementById('slideMenu');
-        const overlay = document.getElementById('overlay');
         const logList = document.getElementById('logList');
         const recordsBody = document.getElementById('recordsBody');
         const bettorNameInput = document.getElementById('bettorNameInput');
@@ -1054,18 +999,6 @@
             }
         });
 
-        // ===== Slide Menu =====
-        const menuBtn = document.getElementById('menuBtn');
-        const closeMenuBtn = document.getElementById('closeMenuBtn');
-
-        function toggleMenu() {
-            slideMenu.classList.toggle('open');
-            overlay.classList.toggle('open');
-        }
-        menuBtn.addEventListener('click', toggleMenu);
-        closeMenuBtn.addEventListener('click', toggleMenu);
-        overlay.addEventListener('click', toggleMenu);
-
         // ===== Keypad (inline, below calculate button) =====
         const keypadTarget = document.getElementById('viberInput');
         function keypadInsert(ch) {
@@ -1116,13 +1049,22 @@
                 document.getElementById('hotAmtInput').value = '';
                 document.getElementById('hotStatus').textContent = '';
                 applyState(data);
-                toggleMenu();
             }
         });
 
         // ===== Init =====
         initLogs();
         initRecords();
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("/sw.js")
+                    .then((reg) => console.log('SW registered:', reg.scope))
+                    .catch((err) => console.error('SW registration failed:', err));
+            });
+        }
     </script>
 
     <!-- Footer -->

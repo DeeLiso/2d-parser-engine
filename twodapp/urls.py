@@ -1,10 +1,13 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
+from django.views.static import serve
+from django.conf import settings
 
 from . import views
 
 urlpatterns = [
     path('robots.txt', views.robots_txt, name='robots'),
+    path('sw.js', lambda r: serve(r, 'sw.js', document_root=str(settings.BASE_DIR / 'twodapp' / 'static')), name='service_worker'),
     path('login/', auth_views.LoginView.as_view(template_name='twodapp/login.html'), name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('', views.index, name='index'),
