@@ -1,73 +1,181 @@
 <!DOCTYPE html>
-{% load static %}
-<html lang="my" style="font-size: 16px;">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ဝင်ရောက်ရန် (Login)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="{% static 'js/security.js' %}" defer></script>
     <style>
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
         }
         .login-card {
-            animation: fadeUp 0.5s ease-out;
+            background: white;
+            border-radius: 1.25rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            text-align: center;
         }
-        @keyframes fadeUp {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
+        .login-title { font-size: 1.4rem; font-weight: 800; color: #1e1b4b; margin-bottom: 0.25rem; }
+        .login-sub { font-size: 0.8rem; color: #6b7280; margin-bottom: 2rem; }
+        .role-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            border-radius: 1rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: transform 0.12s, box-shadow 0.12s;
+            margin-bottom: 1rem;
+            border: none;
+            cursor: pointer;
+            color: white;
         }
-        .login-input {
-            transition: all 0.2s ease;
+        .role-btn:active { transform: scale(0.97); }
+        .role-bettor { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 6px 20px rgba(16,185,129,0.3); }
+        .role-dealer { background: linear-gradient(135deg, #d97706, #f59e0b); box-shadow: 0 6px 20px rgba(245,158,11,0.3); }
+        .role-btn i { font-size: 1.3rem; }
+        .role-sub { font-size: 0.65rem; font-weight: 400; opacity: 0.8; }
+
+        .dealer-form { display: none; margin-top: 1.5rem; text-align: left; }
+        .dealer-form.show { display: block; }
+        .field { margin-bottom: 1rem; }
+        .field label { font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; display: block; }
+        .field input {
+            width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #d1d5db; border-radius: 0.5rem;
+            font-size: 0.9rem; outline: none; box-sizing: border-box; transition: border-color 0.15s;
         }
-        .login-input:focus {
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+        .field input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+        .submit-btn {
+            width: 100%; padding: 0.8rem; border: none; border-radius: 0.5rem; font-size: 1rem;
+            font-weight: 700; cursor: pointer; color: white; background: linear-gradient(135deg, #d97706, #f59e0b);
+            transition: transform 0.1s;
         }
+        .submit-btn:active { transform: scale(0.97); }
+        .error-msg { color: #dc2626; font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; display: none; }
+        .back-link { font-size: 0.75rem; color: #6b7280; cursor: pointer; margin-top: 1rem; display: inline-block; }
+        .back-link:hover { color: #374151; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 min-h-screen flex items-center justify-center p-4 overflow-x-hidden">
+<body>
+    <div class="login-card">
+        <!-- Role Selection -->
+        <div id="roleSelect">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">🎲</div>
+            <div class="login-title">2D FPEngine</div>
+            <div class="login-sub">ဝင်ရောက်ရန် ရွေးပါ</div>
 
-    <div class="login-card bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="bg-indigo-600 text-white px-6 py-5 text-center">
-            <div class="text-3xl mb-1"><i class="fas fa-dice"></i></div>
-            <h1 class="text-xl font-bold">2DAD</h1>
-            <p class="text-indigo-200 text-sm mt-0.5">မှတ်တမ်းစာရင်း စီမံခန့်ခွဲမှုစနစ်</p>
+            <button class="role-btn role-bettor" onclick="showBettorLogin()">
+                <i class="fas fa-pen-to-square"></i>
+                <div>
+                    <div>ထိုးသား</div>
+                    <div class="role-sub">Bettor — Formula Parser</div>
+                </div>
+            </button>
+
+            <button class="role-btn role-dealer" onclick="showDealerLogin()">
+                <i class="fas fa-crown"></i>
+                <div>
+                    <div>ဒိုင်</div>
+                    <div class="role-sub">Dealer — Admin Panel</div>
+                </div>
+            </button>
         </div>
 
-        <form method="post" action="{% url 'login' %}" class="p-6 space-y-4">
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-3 py-2">
-                    <i class="fas fa-exclamation-circle mr-1"></i>
-                    {% for e in form.non_field_errors %}{{ e }}{% endfor %}
-                </div>
-            {% endif %}
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1"><i class="fas fa-user mr-1 text-indigo-500"></i>အသုံးပြုသူအမည်</label>
-                <input type="text" name="username" autofocus required
-                       class="login-input w-full p-3 border border-gray-300 rounded-lg outline-none text-sm"
-                       placeholder="Username">
+        <!-- Bettor Login -->
+        <div id="bettorForm" class="dealer-form">
+            <div style="font-size:1.5rem; margin-bottom:0.5rem;">🟢</div>
+            <div style="font-weight:700; font-size:1rem; color:#065f46; margin-bottom:0.25rem;">ထိုးသား Login</div>
+            <div class="field">
+                <label>Username</label>
+                <input id="bmLoginUser" type="text" placeholder="Username" autofocus>
             </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1"><i class="fas fa-lock mr-1 text-indigo-500"></i>စကားဝှက်</label>
-                <input type="password" name="password" required
-                       class="login-input w-full p-3 border border-gray-300 rounded-lg outline-none text-sm"
-                       placeholder="Password">
+            <div class="field">
+                <label>Password</label>
+                <input id="bmLoginPass" type="password" placeholder="Password">
             </div>
-
-            <input type="hidden" name="next" value="{{ next }}">
-
-            <button type="submit"
-                    class="w-full py-3 rounded-lg text-white font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-indigo-300/50">
-                <i class="fas fa-sign-in-alt mr-2"></i>ဝင်ရောက်မည်
+            <div id="bmLoginError" class="error-msg"></div>
+            <button id="bmLoginBtn" class="submit-btn">
+                <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
             </button>
-        </form>
+            <div class="back-link" onclick="showRoles()"><i class="fas fa-arrow-left mr-1"></i> နောက်သို့</div>
+        </div>
+
+        <!-- Dealer Login (Django admin) -->
+        <div id="dealerForm" class="dealer-form">
+            <div style="font-size:1.5rem; margin-bottom:0.5rem;">🟡</div>
+            <div style="font-weight:700; font-size:1rem; color:#92400e; margin-bottom:0.25rem;">ဒိုင် Login</div>
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="error-msg" style="display:block;">
+                        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+                    </div>
+                {% endif %}
+                <div class="field">
+                    <label>အသုံးပြုသူအမည်</label>
+                    <input type="text" name="username" required placeholder="Username" autofocus>
+                </div>
+                <div class="field">
+                    <label>စကားဝှက်</label>
+                    <input type="password" name="password" required placeholder="Password">
+                </div>
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
+                </button>
+            </form>
+            <div class="back-link" onclick="showRoles()"><i class="fas fa-arrow-left mr-1"></i> နောက်သို့</div>
+        </div>
     </div>
 
+    <script>
+        function showRoles() {
+            document.getElementById('roleSelect').style.display = '';
+            document.getElementById('bettorForm').classList.remove('show');
+            document.getElementById('dealerForm').classList.remove('show');
+        }
+        function showBettorLogin() {
+            document.getElementById('roleSelect').style.display = 'none';
+            document.getElementById('bettorForm').classList.add('show');
+        }
+        function showDealerLogin() {
+            document.getElementById('roleSelect').style.display = 'none';
+            document.getElementById('dealerForm').classList.add('show');
+        }
+
+        document.getElementById('bmLoginBtn').addEventListener('click', async () => {
+            const username = document.getElementById('bmLoginUser').value.trim();
+            const password = document.getElementById('bmLoginPass').value;
+            const errEl = document.getElementById('bmLoginError');
+            const btn = document.getElementById('bmLoginBtn');
+            if (!username || !password) { errEl.textContent = 'Username + Password ထည့်ပါ!'; errEl.style.display = 'block'; return; }
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...'; errEl.style.display = 'none';
+            try {
+                const res = await fetch('/api/bettor_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.ok) window.location.href = data.redirect;
+                else { errEl.textContent = data.error || 'Login failed'; errEl.style.display = 'block'; }
+            } catch(e) { errEl.textContent = 'Network error'; errEl.style.display = 'block'; }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်';
+        });
+        document.getElementById('bmLoginPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('bmLoginBtn').click(); });
+    </script>
 </body>
 </html>

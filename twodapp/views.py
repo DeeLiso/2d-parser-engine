@@ -9,7 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import GameState, OperationLog
+from .models import GameState, OperationLog, BettorAccount
 from .parser import parse_text
 
 MMT = ZoneInfo('Asia/Yangon')
@@ -22,7 +22,7 @@ def robots_txt(request):
 def api_login_required(fn):
     @functools.wraps(fn)
     def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
+        if not request.user.is_authenticated and not request.session.get('bettor_account_id'):
             return JsonResponse({'ok': False, 'error': 'Not authenticated'}, status=403)
         return fn(request, *args, **kwargs)
     return wrapper
@@ -45,6 +45,7 @@ def _serialize_log(log):
         'is_canceled': log.is_canceled,
         'bettor_name': log.bettor_name,
         'bettor_date': log.bettor_date,
+        'bettor_username': log.bettor_username,
         'time': log.created_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
     }
 
@@ -74,6 +75,19 @@ def records_page(request):
         'records_json': json.dumps(records),
         'count': len(records),
         'over_limits_json': json.dumps(over_limit_items(state)),
+    })
+
+
+@api_login_required
+def bettor_records_page(request):
+    bettor_username = request.session.get('bettor_username', '')
+    state = GameState.get_state()
+    logs = OperationLog.objects.filter(bettor_username=bettor_username).order_by('-id')[:500] if bettor_username else []
+    records = [_serialize_log(l) for l in logs]
+    return render(request, 'twodapp/bettor_records.html', {
+        'records_json': json.dumps(records),
+        'count': len(records),
+        'bettor_name': bettor_username,
     })
 
 
@@ -137,9 +151,14 @@ def state_payload(state):
 
 
 @login_required
+def home_page(request):
+    return render(request, 'twodapp/home.html')
+
+
 def index(request):
     state = GameState.get_state()
     records = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:200]]
+    user_type = request.GET.get('type', 'dealer')
     return render(request, 'twodapp/index.html', {
         'ledger_json': json.dumps(state.ledger),
         'specific_limits_json': json.dumps(state.specific_limits),
@@ -150,6 +169,8 @@ def index(request):
         'bettor_date': state.bettor_date,
         'logs_json': json.dumps(records),
         'over_limits_json': json.dumps(over_limit_items(state)),
+        'user_type': user_type,
+        'bettor_username': request.session.get('bettor_username', ''),
     })
 
 
@@ -194,6 +215,7 @@ def api_parse(request):
     action = request.POST.get('action', 'add')  # 'add' or 'delete'
     bettor_name = request.POST.get('bettor_name', '').strip()
     bettor_date = request.POST.get('bettor_date', '').strip()
+    bettor_username = request.session.get('bettor_username', '')
     state = GameState.get_state()
     parsed, errors = parse_text(text)
     log_entries = []
@@ -214,6 +236,7 @@ def api_parse(request):
             formula=r['formula'], original=r['original'],
             numbers=r['numbers'], count=r['count'], amount=r['amount'],
             bettor_name=bettor_name, bettor_date=bettor_date,
+            bettor_username=bettor_username,
         )
         log_entries.append(_serialize_log(log))
 
@@ -411,3 +434,111 @@ def api_clear_all(request):
     state.save()
     OperationLog.objects.all().delete()
     return JsonResponse({'ok': True, **state_payload(state)})
+
+
+@login_required
+@require_POST
+def api_create_bettor(request):
+    data = json.loads(request.body)
+    username = (data.get('username') or '').strip()
+    password = (data.get('password') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    balance = int(data.get('balance') or 0)
+    hot_limits = data.get('hot_limits') or {}
+
+    if not username or not password:
+        return JsonResponse({'ok': False, 'error': 'Username + password required'})
+    if BettorAccount.objects.filter(username=username).exists():
+        return JsonResponse({'ok': False, 'error': f'"{username}" already exists'})
+
+    acc = BettorAccount(username=username, phone=phone, balance=balance, hot_limits=hot_limits)
+    acc.set_password(password)
+    acc.save()
+    return JsonResponse({'ok': True, 'account': acc.to_dict()})
+
+
+@login_required
+@require_GET
+def api_list_bettors(request):
+    accs = list(BettorAccount.objects.all().order_by('-id').values(
+        'id', 'username', 'phone', 'balance', 'hot_limits', 'is_active',
+        'last_user_agent', 'last_ip', 'last_seen'
+    ))
+    for a in accs:
+        if a.get('last_seen'):
+            a['last_seen'] = a['last_seen'].strftime('%Y-%m-%d %H:%M')
+    return JsonResponse({'ok': True, 'accounts': accs})
+
+
+@login_required
+@require_POST
+def api_delete_bettor(request):
+    data = json.loads(request.body)
+    acc_id = data.get('id')
+    BettorAccount.objects.filter(id=acc_id).delete()
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@require_POST
+def api_edit_bettor(request):
+    data = json.loads(request.body)
+    acc_id = data.get('id')
+    try:
+        acc = BettorAccount.objects.get(id=acc_id)
+    except BettorAccount.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Account not found'})
+    if 'phone' in data:
+        acc.phone = (data['phone'] or '').strip()
+    if 'balance' in data:
+        acc.balance = int(data['balance'] or 0)
+    if 'hot_limits' in data:
+        acc.hot_limits = data['hot_limits'] or {}
+    password = (data.get('password') or '').strip()
+    if password:
+        acc.set_password(password)
+    acc.save()
+    return JsonResponse({'ok': True, 'account': acc.to_dict()})
+
+
+def bettor_login_page(request):
+    return render(request, 'twodapp/bettor_login.html')
+
+
+@login_required
+def manage_bettors_page(request):
+    return render(request, 'twodapp/manage_bettors.html')
+
+
+@require_POST
+def api_bettor_login(request):
+    data = json.loads(request.body)
+    username = (data.get('username') or '').strip()
+    password = (data.get('password') or '').strip()
+    try:
+        acc = BettorAccount.objects.get(username=username, is_active=True)
+    except BettorAccount.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Account not found'})
+    if not acc.check_password(password):
+        return JsonResponse({'ok': False, 'error': 'Wrong password'})
+    from django.utils import timezone
+    acc.last_user_agent = request.META.get('HTTP_USER_AGENT', '')[:300]
+    acc.last_ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))[:50]
+    acc.last_seen = timezone.now()
+    acc.save()
+    request.session['bettor_account_id'] = acc.pk
+    request.session['bettor_username'] = acc.username
+    return JsonResponse({'ok': True, 'redirect': '/bet/?type=bettor'})
+
+
+@login_required
+@require_GET
+def api_bettor_profile(request):
+    acc_id = request.session.get('bettor_account_id')
+    if not acc_id:
+        return JsonResponse({'ok': False, 'error': 'Not logged in as bettor'})
+    try:
+        acc = BettorAccount.objects.get(pk=acc_id)
+    except BettorAccount.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Account not found'})
+    return JsonResponse({'ok': True, 'account': acc.to_dict()})

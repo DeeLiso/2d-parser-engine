@@ -208,7 +208,7 @@
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-14 sm:h-16 gap-1.5">
                 <div class="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-                    <a href="/" class="p-2 rounded-md hover:bg-indigo-500 focus:outline-none shrink-0">
+                    <a href="/bet/?type=dealer" class="p-2 rounded-md hover:bg-indigo-500 focus:outline-none shrink-0">
                         <i class="fas fa-arrow-left text-xl"></i>
                     </a>
                     <span class="font-bold text-sm sm:text-xl tracking-tight truncate min-w-0">
@@ -255,6 +255,32 @@
             </div>
         </div>
     </nav>
+
+    <!-- Button Navbar -->
+    <div class="bg-indigo-50 border-b border-indigo-200 overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-3 py-2 flex items-center gap-2 min-w-max">
+            <a href="/bet/?type=dealer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="/records/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700 text-white text-xs font-bold whitespace-nowrap transition ring-2 ring-indigo-300">
+                <i class="fas fa-list-ol"></i> မှတ်တမ်း
+            </a>
+            <a href="/bet/manage_bettors/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-user-plus"></i> ထိုးသား ဖွင့်ရန်
+            </a>
+            <a href="/ledger/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-th"></i> Ledger
+            </a>
+            <a href="/limit/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-exclamation-triangle"></i> Limit
+            </a>
+        </div>
+    </div>
 
     <!-- Live Ticker -->
     <div id="tickerBar" class="bg-slate-800 text-emerald-300 overflow-hidden whitespace-nowrap shadow-md">
@@ -647,6 +673,7 @@
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5">
                                     <span class="font-bold text-gray-800 truncate">${r.bettor_name || '—'}</span>
+                                    ${r.bettor_username ? `<span class="text-[10px] text-indigo-500 font-bold bg-indigo-50 px-1.5 py-0.5 rounded-full shrink-0"><i class="fas fa-user-circle mr-0.5"></i>${r.bettor_username}</span>` : ''}
                                     <span class="text-[10px] text-gray-400 font-semibold bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">#${r.id}</span>
                                 </div>
                                 <div class="text-[11px] text-gray-400 font-mono mt-0.5"><i class="far fa-clock mr-1"></i>${date} · ${time}</div>

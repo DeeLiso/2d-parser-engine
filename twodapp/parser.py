@@ -21,7 +21,7 @@ def clean_line(line):
       dot becomes the amount separator: 12, 14, 27 1500.
     - Normalises Myanmar separators (၊ နှင့် ။) to commas.
     """
-    line = line.replace('၊', ',').replace('။', ',').strip()
+    line = line.replace('၊', ',').replace('။', ',').replace('ဒဲ့', ' ').strip()
     line = re.sub(r'\.{2,}', '.', line)
     line = re.sub(r'^\.+', '', line)
     line = re.sub(r'\.+$', '', line)

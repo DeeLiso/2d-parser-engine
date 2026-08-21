@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 
 
 class GameState(models.Model):
@@ -32,6 +33,39 @@ class GameState(models.Model):
         return obj
 
 
+class BettorAccount(models.Model):
+    username = models.CharField(max_length=50, unique=True)
+    password_hash = models.CharField(max_length=128)
+    phone = models.CharField(max_length=20, blank=True, default='')
+    balance = models.IntegerField(default=0)
+    hot_limits = models.JSONField(default=dict)  # e.g. {'23': 5000, '44': 3000}
+    is_active = models.BooleanField(default=True)
+    last_user_agent = models.CharField(max_length=300, blank=True, default='')
+    last_ip = models.CharField(max_length=50, blank=True, default='')
+    last_seen = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def set_password(self, raw):
+        self.password_hash = make_password(raw)
+
+    def check_password(self, raw):
+        return check_password(raw, self.password_hash)
+
+    def to_dict(self):
+        from django.utils import timezone as tz
+        return {
+            'id': self.pk,
+            'username': self.username,
+            'phone': self.phone,
+            'balance': self.balance,
+            'hot_limits': self.hot_limits,
+            'is_active': self.is_active,
+            'last_user_agent': self.last_user_agent,
+            'last_ip': self.last_ip,
+            'last_seen': self.last_seen.astimezone(tz.utc).strftime('%Y-%m-%d %H:%M') if self.last_seen else '',
+        }
+
+
 class OperationLog(models.Model):
     formula = models.CharField(max_length=50, blank=True, default='')
     original = models.TextField(default='')
@@ -42,6 +76,7 @@ class OperationLog(models.Model):
     is_canceled = models.BooleanField(default=False)
     bettor_name = models.CharField(max_length=100, blank=True, default='')
     bettor_date = models.CharField(max_length=10, blank=True, default='')
+    bettor_username = models.CharField(max_length=50, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
