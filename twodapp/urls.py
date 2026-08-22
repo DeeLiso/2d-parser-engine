@@ -35,4 +35,17 @@ urlpatterns = [
     path('bet/manage_bettors/', views.manage_bettors_page, name='manage_bettors'),
     path('api/bettor_login', views.api_bettor_login, name='api_bettor_login'),
     path('api/bettor_profile', views.api_bettor_profile, name='api_bettor_profile'),
+    path('chat/', views.chat_page, name='chat'),
+    path('bet/chat/', views.bettor_chat_page, name='bettor_chat'),
+    path('api/chat/send', views.api_chat_send, name='api_chat_send'),
+    path('api/chat/poll', views.api_chat_poll, name='api_chat_poll'),
+    path('api/chat/clear', views.api_chat_clear, name='api_chat_clear'),
+    path('api/chat/pin', views.api_chat_pin, name='api_chat_pin'),
+    path('api/chat/react', views.api_chat_react, name='api_chat_react'),
+    path('api/chat/upload_photo', views.api_chat_upload_photo, name='api_chat_upload_photo'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('media/<path:path>', lambda r, path: serve(r, path, document_root=str(settings.MEDIA_ROOT))),
+    ]

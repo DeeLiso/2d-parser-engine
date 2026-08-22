@@ -9,7 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import GameState, OperationLog, BettorAccount
+from .models import GameState, OperationLog, BettorAccount, ChatMessage, ChatReaction
 from .parser import parse_text
 
 MMT = ZoneInfo('Asia/Yangon')
@@ -542,3 +542,139 @@ def api_bettor_profile(request):
     except BettorAccount.DoesNotExist:
         return JsonResponse({'ok': False, 'error': 'Account not found'})
     return JsonResponse({'ok': True, 'account': acc.to_dict()})
+
+
+@api_login_required
+def chat_page(request):
+    return render(request, 'twodapp/chat.html', {'chat_role': 'owner'})
+
+
+@api_login_required
+def bettor_chat_page(request):
+    return render(request, 'twodapp/chat.html', {'chat_role': 'player'})
+
+
+@require_POST
+@api_login_required
+def api_chat_send(request):
+    data = json.loads(request.body)
+    message = (data.get('message') or '').strip()
+    if not message:
+        return JsonResponse({'ok': False, 'error': 'Empty message'})
+    if request.user.is_authenticated:
+        sender_type = 'owner'
+        sender_name = request.user.username
+    else:
+        sender_type = 'player'
+        sender_name = request.session.get('bettor_username', 'Player')
+    ChatMessage.objects.create(sender_type=sender_type, sender_name=sender_name, message=message)
+    return JsonResponse({'ok': True})
+
+
+@require_GET
+@api_login_required
+def api_chat_poll(request):
+    after_id = int(request.GET.get('after', 0))
+    msgs = ChatMessage.objects.filter(id__gt=after_id).order_by('id')[:100]
+    data = []
+    for m in msgs:
+        reactions = {}
+        for r in m.reactions.all():
+            reactions.setdefault(r.emoji, {'count': 0, 'users': []})
+            reactions[r.emoji]['count'] += 1
+            reactions[r.emoji]['users'].append(f"{r.user_type}:{r.user_name}")
+        data.append({
+            'id': m.id,
+            'sender_type': m.sender_type,
+            'sender_name': m.sender_name,
+            'message': m.message,
+            'photo': m.photo.url if m.photo else None,
+            'is_pinned': m.is_pinned,
+            'time': m.created_at.astimezone(MMT).strftime('%H:%M'),
+            'reactions': reactions,
+        })
+    return JsonResponse({'ok': True, 'messages': data})
+
+
+@require_POST
+@api_login_required
+def api_chat_clear(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'ok': False, 'error': 'Owner only'})
+    ChatMessage.objects.all().delete()
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+@api_login_required
+def api_chat_pin(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'ok': False, 'error': 'Owner only'})
+    data = json.loads(request.body)
+    msg_id = data.get('id')
+    try:
+        msg = ChatMessage.objects.get(pk=msg_id)
+    except ChatMessage.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Not found'})
+    msg.is_pinned = not msg.is_pinned
+    msg.save(update_fields=['is_pinned'])
+    return JsonResponse({'ok': True, 'is_pinned': msg.is_pinned})
+
+
+EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '💯', '🙏']
+
+
+@require_POST
+@api_login_required
+def api_chat_react(request):
+    data = json.loads(request.body)
+    msg_id = data.get('id')
+    emoji = data.get('emoji', '')
+    if emoji not in EMOJIS:
+        return JsonResponse({'ok': False, 'error': 'Invalid emoji'})
+    try:
+        msg = ChatMessage.objects.get(pk=msg_id)
+    except ChatMessage.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Not found'})
+    if request.user.is_authenticated:
+        user_type, user_name = 'owner', request.user.username
+    else:
+        user_type = 'player'
+        user_name = request.session.get('bettor_username', 'Player')
+    existing = ChatReaction.objects.filter(message=msg, emoji=emoji, user_type=user_type, user_name=user_name)
+    if existing.exists():
+        existing.delete()
+        toggled = False
+    else:
+        ChatReaction.objects.create(message=msg, emoji=emoji, user_type=user_type, user_name=user_name)
+        toggled = True
+    reactions = {}
+    for r in msg.reactions.all():
+        reactions.setdefault(r.emoji, {'count': 0, 'users': []})
+        reactions[r.emoji]['count'] += 1
+        reactions[r.emoji]['users'].append(f"{r.user_type}:{r.user_name}")
+    return JsonResponse({'ok': True, 'toggled': toggled, 'reactions': reactions})
+
+
+@require_POST
+@api_login_required
+def api_chat_upload_photo(request):
+    photo = request.FILES.get('photo')
+    if not photo:
+        return JsonResponse({'ok': False, 'error': 'No photo'})
+    if photo.size > 5 * 1024 * 1024:
+        return JsonResponse({'ok': False, 'error': 'Max 5MB'})
+    if not photo.content_type.startswith('image/'):
+        return JsonResponse({'ok': False, 'error': 'Images only'})
+    caption = request.POST.get('caption', '').strip()
+    if request.user.is_authenticated:
+        sender_type, sender_name = 'owner', request.user.username
+    else:
+        sender_type = 'player'
+        sender_name = request.session.get('bettor_username', 'Player')
+    msg = ChatMessage.objects.create(
+        sender_type=sender_type, sender_name=sender_name,
+        message=caption, photo=photo
+    )
+    photo_url = msg.photo.url
+    return JsonResponse({'ok': True, 'photo_url': photo_url, 'msg_id': msg.id})

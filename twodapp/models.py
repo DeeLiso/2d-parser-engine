@@ -81,3 +81,26 @@ class OperationLog(models.Model):
 
     class Meta:
         ordering = ['-id']
+
+
+class ChatMessage(models.Model):
+    sender_type = models.CharField(max_length=10)  # 'owner' or 'player'
+    sender_name = models.CharField(max_length=50)
+    message = models.TextField(blank=True, default='')
+    photo = models.ImageField(upload_to='chat_photos/', blank=True, null=True)
+    is_pinned = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+
+class ChatReaction(models.Model):
+    message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name='reactions')
+    emoji = models.CharField(max_length=10)
+    user_type = models.CharField(max_length=10)  # 'owner' or 'player'
+    user_name = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']

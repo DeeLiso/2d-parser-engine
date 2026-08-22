@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ထိုးသား Account များ</title>
+    <title>Player Account များ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -32,7 +32,7 @@
             </a>
             <a href="/bet/manage_bettors/"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-emerald-700 text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-user-plus"></i> ထိုးသား ဖွင့်ရန်
+                <i class="fas fa-user-plus"></i> Player ဖွင့်ရန်
             </a>
             <a href="/ledger/"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
@@ -42,6 +42,10 @@
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-exclamation-triangle"></i> Limit
             </a>
+            <a href="/chat/"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
+                <i class="fas fa-comments"></i> Chat
+            </a>
         </div>
     </nav>
 
@@ -49,7 +53,7 @@
 
         <!-- Create Form -->
         <div class="card p-5">
-            <h2 class="font-bold text-gray-800 mb-3"><i class="fas fa-user-plus text-emerald-500 mr-1"></i> Account အသစ်ဖွင့်ရန်</h2>
+            <h2 class="font-bold text-gray-800"><i class="fas fa-user-plus text-emerald-500 mr-1"></i> Account အသစ်ဖွင့်ရန်</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="field">
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label>

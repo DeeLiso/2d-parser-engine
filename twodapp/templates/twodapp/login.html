@@ -80,16 +80,16 @@
             <button class="role-btn role-bettor" onclick="showBettorLogin()">
                 <i class="fas fa-pen-to-square"></i>
                 <div>
-                    <div>ထိုးသား</div>
-                    <div class="role-sub">Bettor — Formula Parser</div>
+                    <div>Player</div>
+                    <div class="role-sub">Player — Formula Parser</div>
                 </div>
             </button>
 
             <button class="role-btn role-dealer" onclick="showDealerLogin()">
                 <i class="fas fa-crown"></i>
                 <div>
-                    <div>ဒိုင်</div>
-                    <div class="role-sub">Dealer — Admin Panel</div>
+                    <div>Owner</div>
+                    <div class="role-sub">Owner — Admin Panel</div>
                 </div>
             </button>
         </div>
@@ -97,7 +97,7 @@
         <!-- Bettor Login -->
         <div id="bettorForm" class="dealer-form">
             <div style="font-size:1.5rem; margin-bottom:0.5rem;">🟢</div>
-            <div style="font-weight:700; font-size:1rem; color:#065f46; margin-bottom:0.25rem;">ထိုးသား Login</div>
+            <div style="font-weight:700; font-size:1rem; color:#065f46; margin-bottom:0.25rem;">Player Login</div>
             <div class="field">
                 <label>Username</label>
                 <input id="bmLoginUser" type="text" placeholder="Username" autofocus>
@@ -116,7 +116,7 @@
         <!-- Dealer Login (Django admin) -->
         <div id="dealerForm" class="dealer-form">
             <div style="font-size:1.5rem; margin-bottom:0.5rem;">🟡</div>
-            <div style="font-weight:700; font-size:1rem; color:#92400e; margin-bottom:0.25rem;">ဒိုင် Login</div>
+            <div style="font-weight:700; font-size:1rem; color:#92400e; margin-bottom:0.25rem;">Owner Login</div>
             <form method="post" action="{% url 'login' %}">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
