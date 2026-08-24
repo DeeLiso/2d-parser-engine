@@ -2,143 +2,383 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Account များ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Player Accounts</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/effects.css">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; }
-        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        .field input, .field select { transition: border-color 0.15s; }
-        .field input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.12); outline: none; }
-        .info-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 9999px; font-size: 10px; font-weight: 600; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100dvh; overscroll-behavior: none;
+        }
+        button, a { touch-action: manipulation; }
+
+        /* ===== Glass Nav ===== */
+        .glass-nav {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* ===== Bottom Nav ===== */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+            padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .bottom-nav-inner {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            max-width: 28rem; margin: 0 auto;
+        }
+        .bottom-nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 6px 0; gap: 2px;
+            color: rgba(255,255,255,0.3);
+            font-size: 9px; font-weight: 700;
+            transition: color 0.15s;
+            text-decoration: none;
+        }
+        .bottom-nav-item.active { color: #34d399; }
+        .bottom-nav-item i { font-size: 16px; }
+
+        /* ===== FAB ===== */
+        .fab {
+            position: fixed; bottom: 60px; right: 16px; z-index: 45;
+            width: 52px; height: 52px; border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; font-size: 22px; font-weight: 300;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 20px rgba(16,185,129,0.5);
+            border: none; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .fab:active { transform: scale(0.9); }
+        .fab:hover { box-shadow: 0 6px 28px rgba(16,185,129,0.6); }
+
+        /* ===== Bottom Sheet ===== */
+        .sheet-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 55; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+        .sheet {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+            background: #1e293b;
+            border-radius: 1.25rem 1.25rem 0 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+            max-height: 85vh; overflow-y: auto;
+            padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px) 16px;
+        }
+        .sheet.open { transform: translateY(0); }
+        .sheet .handle {
+            width: 36px; height: 4px; border-radius: 2px;
+            background: rgba(255,255,255,0.2); margin: 0 auto 12px;
+        }
+
+        /* ===== Form Fields ===== */
+        .form-field {
+            margin-bottom: 12px;
+        }
+        .form-field label {
+            display: block; font-size: 10px; font-weight: 700;
+            text-transform: uppercase; color: rgba(255,255,255,0.3);
+            margin-bottom: 4px;
+        }
+        .form-field input, .form-field select {
+            width: 100%; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 10px 12px;
+            color: white; font-size: 13px; outline: none;
+            transition: border-color 0.15s;
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,0.2); }
+        .form-field input:focus { border-color: rgba(16,185,129,0.5); }
+
+        /* ===== Hot Limit Chips ===== */
+        .hot-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(249,115,22,0.15);
+            border: 1px solid rgba(249,115,22,0.3);
+            border-radius: 9999px;
+            padding: 3px 8px; font-size: 11px; font-weight: 700;
+            color: #fb923c;
+        }
+        .hot-chip button {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: rgba(249,115,22,0.3);
+            border: none; color: #fb923c; font-size: 9px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .hot-chip button:active { background: rgba(239,68,68,0.5); color: white; }
+        .hot-inputs {
+            display: flex; gap: 6px; align-items: center;
+        }
+        .hot-inputs input {
+            flex: 1; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; padding: 6px 8px;
+            color: white; font-size: 12px; outline: none; text-align: center;
+        }
+        .hot-inputs input::placeholder { color: rgba(255,255,255,0.2); }
+        .hot-inputs button {
+            background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.3);
+            color: #34d399; font-size: 11px; font-weight: 700;
+            padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+        }
+
+        /* ===== Account Cards ===== */
+        .account-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 1rem; overflow: hidden;
+            margin-bottom: 8px; position: relative;
+        }
+        .card-swipe-wrap {
+            position: relative; overflow: hidden;
+        }
+        .card-actions-left, .card-actions-right {
+            position: absolute; top: 0; bottom: 0;
+            display: flex; align-items: center; gap: 4px;
+            padding: 0 12px;
+        }
+        .card-actions-left { left: 0; }
+        .card-actions-right { right: 0; }
+        .card-action-btn {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; border: none; color: white; cursor: pointer;
+        }
+        .card-main {
+            position: relative; z-index: 2;
+            background: rgba(255,255,255,0.06);
+            transition: transform 0.2s ease;
+            padding: 12px;
+        }
+        .card-main.swiping { transition: none; }
+
+        /* ===== Status Dot ===== */
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 4px rgba(34,197,94,0.5);
+        }
+        .status-dot.offline { background: #64748b; box-shadow: none; }
+
+        /* ===== Tech Info Dropdown ===== */
+        .tech-info {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .tech-info.open { max-height: 120px; }
+        .tech-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            font-size: 9px; font-weight: 700;
+            padding: 2px 6px; border-radius: 4px;
+        }
+
+        /* ===== Deposit/Withdraw Sheet ===== */
+        .amount-btn {
+            padding: 8px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+            font-size: 12px; font-weight: 700; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .amount-btn:active { transform: scale(0.95); }
+        .amount-btn.selected {
+            background: rgba(99,102,241,0.3);
+            border-color: rgba(99,102,241,0.5);
+            color: #a5b4fc;
+        }
+
+        .page-body { padding-bottom: 72px; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-card { animation: fadeUp 0.25s ease-out both; }
     </style>
 </head>
-<body class="min-h-screen">
-    <!-- Navbar -->
-    <nav class="bg-emerald-600 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-3xl mx-auto px-3 h-12 flex items-center gap-2 overflow-x-auto min-w-max">
-            <a href="/bet/?type=dealer"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-arrow-left"></i> Back
+<body class="text-white">
+
+    <!-- Glass Header -->
+    <nav class="glass-nav sticky top-0 z-50 shrink-0">
+        <div class="max-w-3xl mx-auto px-2 sm:px-4 h-11 sm:h-12 flex items-center gap-2">
+            <a href="/bet/?type=dealer" class="text-white/60 hover:text-white w-8 h-8 flex items-center justify-center shrink-0 transition">
+                <i class="fas fa-arrow-left text-sm"></i>
             </a>
-            <a href="/bet/?type=dealer"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-home"></i> Home
-            </a>
-            <a href="/records/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-list-ol"></i> မှတ်တမ်း
-            </a>
-            <a href="/bet/manage_bettors/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white text-emerald-700 text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-user-plus"></i> Player ဖွင့်ရန်
-            </a>
-            <a href="/ledger/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-th"></i> Ledger
-            </a>
-            <a href="/limit/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-exclamation-triangle"></i> Limit
-            </a>
-            <a href="/chat/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
-                <i class="fas fa-comments"></i> Chat
-            </a>
+            <span class="font-bold text-xs sm:text-sm truncate"><i class="fas fa-users mr-1 text-emerald-400"></i> Players</span>
+            <div class="ml-auto flex items-center gap-2">
+                <span id="bmTotalBal" class="text-[10px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">0 Ks</span>
+                <span id="bmCount" class="text-[10px] font-bold text-white/30 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">0</span>
+            </div>
         </div>
     </nav>
 
-    <div class="max-w-3xl mx-auto px-4 py-5 space-y-5">
+    <!-- Account List -->
+    <main class="max-w-3xl mx-auto w-full px-3 py-3 page-body">
+        <div id="bmList"></div>
+    </main>
 
-        <!-- Create Form -->
-        <div class="card p-5">
-            <h2 class="font-bold text-gray-800"><i class="fas fa-user-plus text-emerald-500 mr-1"></i> Account အသစ်ဖွင့်ရန်</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="field">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label>
-                    <input id="bmUser" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="username">
-                </div>
-                <div class="field">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password *</label>
-                    <input id="bmPass" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="password">
-                </div>
-                <div class="field">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Phone Number</label>
-                    <input id="bmPhone" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="09xxxxxxxxx">
-                </div>
-                <div class="field">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">ငွေအမောင့် (Balance)</label>
-                    <input id="bmBalance" type="number" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0">
-                </div>
-                <div class="field sm:col-span-2">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Hot Limits (number:amount, comma separated)</label>
-                    <input id="bmHotLimits" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="23:5000, 44:3000">
-                </div>
-            </div>
-            <div id="bmError" class="text-red-500 text-xs font-semibold mt-2 hidden"></div>
-            <div id="bmSuccess" class="text-emerald-600 text-xs font-semibold mt-2 hidden"></div>
-            <button id="bmSaveBtn" class="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition btn-fx ripple">
-                <i class="fas fa-save mr-1"></i> Account ဖွင့်ရန်
-            </button>
-        </div>
+    <!-- FAB -->
+    <button id="fabBtn" class="fab ripple">
+        <i class="fas fa-plus"></i>
+    </button>
 
-        <!-- Account List -->
-        <div class="card">
-            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 class="font-bold text-gray-800"><i class="fas fa-users text-indigo-500 mr-1"></i> Account များ</h2>
-                <div class="flex items-center gap-2">
-                    <span id="bmTotalBal" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">0 Ks</span>
-                    <span id="bmCount" class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">0</span>
-                </div>
-            </div>
-            <div id="bmList" class="divide-y divide-gray-50"></div>
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <a href="/bet/?type=dealer" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/records/" class="bottom-nav-item">
+                <i class="fas fa-list-ol"></i>
+                <span>Records</span>
+            </a>
+            <a href="/ledger/" class="bottom-nav-item">
+                <i class="fas fa-th"></i>
+                <span>Ledger</span>
+            </a>
+            <a href="/chat/" class="bottom-nav-item">
+                <i class="fas fa-comments"></i>
+                <span>Chat</span>
+            </a>
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="bg-amber-500 text-white px-5 py-3 flex items-center justify-between">
-                <h3 class="font-bold text-sm"><i class="fas fa-pen mr-1"></i> Account ပြင်ရန်</h3>
-                <button onclick="closeEditModal()" class="text-white/80 hover:text-white text-lg"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-5 space-y-3">
-                <input type="hidden" id="editId">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Username</label>
-                    <input id="editUser" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-100" readonly>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password (အသစ်ထည့်မှ ပြောင်းမည်)</label>
-                    <input id="editPass" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="ထည့်မထားပါနဲ့">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label>
-                    <input id="editPhone" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Balance</label>
-                    <input id="editBalance" type="number" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Hot Limits (number:amount)</label>
-                    <input id="editHot" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="23:5000, 44:3000">
-                </div>
-            </div>
-            <div id="editError" class="text-red-500 text-xs font-semibold px-5 hidden"></div>
-            <div class="px-5 pb-5 flex gap-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2 rounded-lg text-sm transition">Cancel</button>
-                <button onclick="saveEdit()" id="editSaveBtn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition btn-fx ripple"><i class="fas fa-save mr-1"></i> Save</button>
+    <!-- Create Account Bottom Sheet -->
+    <div id="createOverlay" class="sheet-overlay" onclick="closeCreateSheet()"></div>
+    <div id="createSheet" class="sheet">
+        <div class="handle"></div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-white"><i class="fas fa-user-plus mr-1 text-emerald-400"></i> Account အသစ်ဖွင့်ရန်</h3>
+            <button onclick="closeCreateSheet()" class="text-white/30 hover:text-white/60 text-xs w-7 h-7 flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="form-field">
+            <label>Username *</label>
+            <input id="bmUser" type="text" placeholder="username">
+        </div>
+        <div class="form-field">
+            <label>Password *</label>
+            <input id="bmPass" type="password" placeholder="password">
+        </div>
+        <div class="form-field">
+            <label>Phone</label>
+            <input id="bmPhone" type="text" placeholder="09xxxxxxxxx">
+        </div>
+        <div class="form-field">
+            <label>Balance</label>
+            <input id="bmBalance" type="number" placeholder="0">
+        </div>
+        <div class="form-field">
+            <label>Hot Limits</label>
+            <div id="hotChipsWrap" class="flex flex-wrap gap-1.5 mb-2"></div>
+            <div class="hot-inputs">
+                <input id="hotNumInput" type="text" placeholder="ဂဏန်း" maxlength="2">
+                <input id="hotAmtInput" type="number" placeholder="ပမာဏ">
+                <button onclick="addHotChip()"><i class="fas fa-plus mr-0.5"></i>ထည့်</button>
             </div>
         </div>
+        <div id="bmError" class="text-red-400 text-xs font-bold mb-2 hidden"></div>
+        <div id="bmSuccess" class="text-emerald-400 text-xs font-bold mb-2 hidden"></div>
+        <button id="bmSaveBtn" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition">
+            <i class="fas fa-save mr-1"></i> Account ဖွင့်ရန်
+        </button>
+    </div>
+
+    <!-- Edit Bottom Sheet -->
+    <div id="editOverlay" class="sheet-overlay" onclick="closeEditSheet()"></div>
+    <div id="editSheet" class="sheet">
+        <div class="handle"></div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-white"><i class="fas fa-pen mr-1 text-amber-400"></i> Account ပြင်ရန်</h3>
+            <button onclick="closeEditSheet()" class="text-white/30 hover:text-white/60 text-xs w-7 h-7 flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+        <input type="hidden" id="editId">
+        <div class="form-field">
+            <label>Username</label>
+            <input id="editUser" type="text" readonly class="opacity-50">
+        </div>
+        <div class="form-field">
+            <label>Password (အသစ်ထည့်မှ ပြောင်းမည်)</label>
+            <input id="editPass" type="password" placeholder="ထည့်မထားပါနဲ့">
+        </div>
+        <div class="form-field">
+            <label>Phone</label>
+            <input id="editPhone" type="text">
+        </div>
+        <div class="form-field">
+            <label>Balance</label>
+            <input id="editBalance" type="number">
+        </div>
+        <div class="form-field">
+            <label>Hot Limits</label>
+            <div id="editHotChipsWrap" class="flex flex-wrap gap-1.5 mb-2"></div>
+            <div class="hot-inputs">
+                <input id="editHotNumInput" type="text" placeholder="ဂဏန်း" maxlength="2">
+                <input id="editHotAmtInput" type="number" placeholder="ပမာဏ">
+                <button onclick="addEditHotChip()"><i class="fas fa-plus mr-0.5"></i>ထည့်</button>
+            </div>
+        </div>
+        <div id="editError" class="text-red-400 text-xs font-bold mb-2 hidden"></div>
+        <div class="flex gap-2">
+            <button onclick="closeEditSheet()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white/50 text-sm font-bold transition">Cancel</button>
+            <button onclick="saveEdit()" id="editSaveBtn" class="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition"><i class="fas fa-save mr-1"></i> Save</button>
+        </div>
+    </div>
+
+    <!-- Deposit/Withdraw Bottom Sheet -->
+    <div id="dwOverlay" class="sheet-overlay" onclick="closeDWSheet()"></div>
+    <div id="dwSheet" class="sheet">
+        <div class="handle"></div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-white"><i class="fas fa-exchange-alt mr-1 text-indigo-400"></i> <span id="dwTitle">Deposit</span></h3>
+            <button onclick="closeDWSheet()" class="text-white/30 hover:text-white/60 text-xs w-7 h-7 flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+        <input type="hidden" id="dwId">
+        <div class="flex gap-2 mb-3">
+            <button id="dwDepositTab" onclick="setDWMode('deposit')" class="flex-1 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold">ငွေဖြည့်</button>
+            <button id="dwWithdrawTab" onclick="setDWMode('withdraw')" class="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-white/40 text-xs font-bold">ငွေထုတ်</button>
+        </div>
+        <div class="form-field">
+            <label>ပမာဏ (Ks)</label>
+            <input id="dwAmount" type="number" placeholder="0">
+        </div>
+        <div class="flex flex-wrap gap-2 mb-3">
+            <button class="amount-btn" onclick="setDWAmt(1000)">1K</button>
+            <button class="amount-btn" onclick="setDWAmt(5000)">5K</button>
+            <button class="amount-btn" onclick="setDWAmt(10000)">10K</button>
+            <button class="amount-btn" onclick="setDWAmt(20000)">20K</button>
+            <button class="amount-btn" onclick="setDWAmt(50000)">50K</button>
+        </div>
+        <div id="dwError" class="text-red-400 text-xs font-bold mb-2 hidden"></div>
+        <button id="dwSaveBtn" onclick="saveDW()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition">
+            <i class="fas fa-check mr-1"></i> Confirm
+        </button>
     </div>
 
     {% csrf_token %}
     <script>
         const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        let hotLimitsData = [];
+        let editHotLimitsData = [];
+        let dwMode = 'deposit';
 
+        /* ===== Parse UA ===== */
         function parseUA(ua) {
             if (!ua) return { browser: '—', os: '' };
             let browser = 'Unknown', os = '';
@@ -151,105 +391,137 @@
             else if (/iPhone|iPad/.test(ua)) os = 'iOS';
             else if (/Windows/.test(ua)) os = 'Windows';
             else if (/Mac OS/.test(ua)) os = 'Mac';
-            else if (/Linux/.test(ua)) os = 'Linux';
             return { browser, os };
         }
 
-        async function loadBettors() {
+        /* ===== Hot Limit Chips ===== */
+        function renderHotChips() {
+            const wrap = document.getElementById('hotChipsWrap');
+            wrap.innerHTML = hotLimitsData.map((h, i) => `
+                <span class="hot-chip">
+                    <span>${h.num}</span> - <span>${Number(h.amt).toLocaleString()}Ks</span>
+                    <button onclick="removeHotChip(${i})"><i class="fas fa-times"></i></button>
+                </span>
+            `).join('');
+        }
+        function addHotChip() {
+            const num = document.getElementById('hotNumInput').value.trim();
+            const amt = parseInt(document.getElementById('hotAmtInput').value);
+            if (!num || isNaN(amt) || amt <= 0) return;
+            if (hotLimitsData.some(h => h.num === num)) return;
+            hotLimitsData.push({ num, amt });
+            document.getElementById('hotNumInput').value = '';
+            document.getElementById('hotAmtInput').value = '';
+            renderHotChips();
+        }
+        function removeHotChip(i) {
+            hotLimitsData.splice(i, 1);
+            renderHotChips();
+        }
+        function renderEditHotChips() {
+            const wrap = document.getElementById('editHotChipsWrap');
+            wrap.innerHTML = editHotLimitsData.map((h, i) => `
+                <span class="hot-chip">
+                    <span>${h.num}</span> - <span>${Number(h.amt).toLocaleString()}Ks</span>
+                    <button onclick="removeEditHotChip(${i})"><i class="fas fa-times"></i></button>
+                </span>
+            `).join('');
+        }
+        function addEditHotChip() {
+            const num = document.getElementById('editHotNumInput').value.trim();
+            const amt = parseInt(document.getElementById('editHotAmtInput').value);
+            if (!num || isNaN(amt) || amt <= 0) return;
+            if (editHotLimitsData.some(h => h.num === num)) return;
+            editHotLimitsData.push({ num, amt });
+            document.getElementById('editHotNumInput').value = '';
+            document.getElementById('editHotAmtInput').value = '';
+            renderEditHotChips();
+        }
+        function removeEditHotChip(i) {
+            editHotLimitsData.splice(i, 1);
+            renderEditHotChips();
+        }
+
+        /* ===== Create Sheet ===== */
+        function openCreateSheet() {
+            hotLimitsData = [];
+            renderHotChips();
+            document.getElementById('bmUser').value = '';
+            document.getElementById('bmPass').value = '';
+            document.getElementById('bmPhone').value = '';
+            document.getElementById('bmBalance').value = '';
+            document.getElementById('bmError').classList.add('hidden');
+            document.getElementById('bmSuccess').classList.add('hidden');
+            document.getElementById('createOverlay').classList.add('open');
+            document.getElementById('createSheet').classList.add('open');
+        }
+        function closeCreateSheet() {
+            document.getElementById('createOverlay').classList.remove('open');
+            document.getElementById('createSheet').classList.remove('open');
+        }
+        document.getElementById('fabBtn').addEventListener('click', openCreateSheet);
+
+        document.getElementById('bmSaveBtn').addEventListener('click', async () => {
+            const errEl = document.getElementById('bmError');
+            const okEl = document.getElementById('bmSuccess');
+            const btn = document.getElementById('bmSaveBtn');
+            const username = document.getElementById('bmUser').value.trim();
+            const password = document.getElementById('bmPass').value;
+            const phone = document.getElementById('bmPhone').value.trim();
+            const balance = parseInt(document.getElementById('bmBalance').value) || 0;
+            const hot_limits = {};
+            hotLimitsData.forEach(h => { hot_limits[h.num] = h.amt; });
+
+            errEl.classList.add('hidden');
+            okEl.classList.add('hidden');
+            if (!username || !password) { errEl.textContent = 'Username + Password ဖြည့်ပါ!'; errEl.classList.remove('hidden'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
             try {
-                const res = await fetch('/api/list_bettors', { headers: { 'X-CSRFToken': CSRF_TOKEN } });
+                const res = await fetch('/api/create_bettor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                    body: JSON.stringify({ username, password, phone, balance, hot_limits })
+                });
                 const data = await res.json();
-                const el = document.getElementById('bmList');
-                const count = document.getElementById('bmCount');
-                if (!data.accounts || !data.accounts.length) {
-                    el.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fas fa-inbox text-3xl mb-2 block"></i>Account မရှိသေးပါ</div>';
-                    count.textContent = '0';
-                    document.getElementById('bmTotalBal').textContent = '0 Ks';
-                    return;
-                }
-                count.textContent = data.accounts.length;
-                const totalBal = data.accounts.reduce((s, a) => s + (a.balance || 0), 0);
-                document.getElementById('bmTotalBal').textContent = totalBal.toLocaleString() + ' Ks';
-                el.innerHTML = data.accounts.map(a => {
-                    const ua = parseUA(a.last_user_agent);
-                    return `
-                    <div class="px-5 py-3 hover:bg-gray-50 transition">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm shrink-0">
-                                    ${a.username.charAt(0).toUpperCase()}
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="font-bold text-sm text-gray-800 truncate">${a.username}</div>
-                                    <div class="text-xs text-gray-400">${a.phone || '—'} · Balance: <span class="text-emerald-600 font-semibold">${(a.balance || 0).toLocaleString()}</span></div>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <a href="/bet/?type=bettor" target="_blank"
-                                    class="text-xs bg-indigo-500 text-white px-2.5 py-1 rounded-lg hover:bg-indigo-600 transition" title="Open">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                                <button onclick='editBettor(${JSON.stringify(a).replace(/'/g, "&#39;")})'
-                                    class="text-xs bg-amber-500 text-white px-2.5 py-1 rounded-lg hover:bg-amber-600 transition" title="Edit">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button onclick="deleteBettor(${a.id}, '${a.username}')"
-                                    class="text-xs bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600 transition btn-fx ripple" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 mt-1.5 ml-12 flex-wrap">
-                            <span class="info-badge bg-blue-100 text-blue-700"><i class="fas fa-globe"></i> ${ua.browser}</span>
-                            ${ua.os ? `<span class="info-badge bg-purple-100 text-purple-700"><i class="fas fa-mobile-alt"></i> ${ua.os}</span>` : ''}
-                            ${a.last_ip ? `<span class="info-badge bg-gray-100 text-gray-600"><i class="fas fa-map-marker-alt"></i> ${a.last_ip}</span>` : ''}
-                            ${a.last_seen ? `<span class="info-badge bg-green-100 text-green-700"><i class="fas fa-clock"></i> ${a.last_seen}</span>` : ''}
-                        </div>
-                    </div>
-                `}).join('');
-            } catch(e) {}
-        }
+                if (data.ok) {
+                    okEl.textContent = `"${username}" ✓`;
+                    okEl.classList.remove('hidden');
+                    closeCreateSheet();
+                    loadBettors();
+                } else { errEl.textContent = data.error || 'Error'; errEl.classList.remove('hidden'); }
+            } catch(e) { errEl.textContent = 'Network error'; errEl.classList.remove('hidden'); }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save mr-1"></i> Account ဖွင့်ရန်';
+        });
 
-        async function deleteBettor(id, name) {
-            if (!confirm(`"${name}" account ကို ဖျက်မလား?`)) return;
-            await fetch('/api/delete_bettor', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-                body: JSON.stringify({ id })
-            });
-            loadBettors();
-        }
-
-        function editBettor(a) {
+        /* ===== Edit Sheet ===== */
+        function openEditSheet(a) {
+            editHotLimitsData = [];
+            const hot = a.hot_limits || {};
+            Object.entries(hot).forEach(([k, v]) => editHotLimitsData.push({ num: k, amt: v }));
+            renderEditHotChips();
             document.getElementById('editId').value = a.id;
             document.getElementById('editUser').value = a.username;
             document.getElementById('editPass').value = '';
             document.getElementById('editPhone').value = a.phone || '';
             document.getElementById('editBalance').value = a.balance || 0;
-            const hot = a.hot_limits || {};
-            const hotStr = Object.entries(hot).map(([k, v]) => `${k}:${v}`).join(', ');
-            document.getElementById('editHot').value = hotStr;
             document.getElementById('editError').classList.add('hidden');
-            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editOverlay').classList.add('open');
+            document.getElementById('editSheet').classList.add('open');
         }
-
-        function closeEditModal() {
-            document.getElementById('editModal').classList.add('hidden');
+        function closeEditSheet() {
+            document.getElementById('editOverlay').classList.remove('open');
+            document.getElementById('editSheet').classList.remove('open');
         }
-
         async function saveEdit() {
             const id = parseInt(document.getElementById('editId').value);
             const phone = document.getElementById('editPhone').value.trim();
             const balance = parseInt(document.getElementById('editBalance').value) || 0;
             const password = document.getElementById('editPass').value;
-            const hotRaw = document.getElementById('editHot').value.trim();
             const hot_limits = {};
-            if (hotRaw) {
-                for (const part of hotRaw.split(',')) {
-                    const [n, l] = part.split(':').map(s => s.trim());
-                    if (n && l && !isNaN(parseInt(l))) hot_limits[n] = parseInt(l);
-                }
-            }
+            editHotLimitsData.forEach(h => { hot_limits[h.num] = h.amt; });
             const body = { id, phone, balance, hot_limits };
             if (password) body.password = password;
 
@@ -266,83 +538,208 @@
                     body: JSON.stringify(body)
                 });
                 const data = await res.json();
-                if (data.ok) {
-                    closeEditModal();
-                    loadBettors();
-                } else {
-                    errEl.textContent = data.error || 'Error';
-                    errEl.classList.remove('hidden');
-                }
-            } catch(e) {
-                errEl.textContent = 'Network error';
-                errEl.classList.remove('hidden');
-            }
+                if (data.ok) { closeEditSheet(); loadBettors(); }
+                else { errEl.textContent = data.error || 'Error'; errEl.classList.remove('hidden'); }
+            } catch(e) { errEl.textContent = 'Network error'; errEl.classList.remove('hidden'); }
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-save mr-1"></i> Save';
         }
 
-        document.getElementById('bmSaveBtn').addEventListener('click', async () => {
-            const errEl = document.getElementById('bmError');
-            const okEl = document.getElementById('bmSuccess');
-            const btn = document.getElementById('bmSaveBtn');
-            const username = document.getElementById('bmUser').value.trim();
-            const password = document.getElementById('bmPass').value;
-            const phone = document.getElementById('bmPhone').value.trim();
-            const balance = parseInt(document.getElementById('bmBalance').value) || 0;
-            const hotRaw = document.getElementById('bmHotLimits').value.trim();
-            const hot_limits = {};
-            if (hotRaw) {
-                for (const part of hotRaw.split(',')) {
-                    const [n, l] = part.split(':').map(s => s.trim());
-                    if (n && l && !isNaN(parseInt(l))) hot_limits[n] = parseInt(l);
-                }
+        /* ===== Deposit/Withdraw Sheet ===== */
+        function openDWSheet(id, name) {
+            document.getElementById('dwId').value = id;
+            document.getElementById('dwTitle').textContent = name;
+            document.getElementById('dwAmount').value = '';
+            document.getElementById('dwError').classList.add('hidden');
+            setDWMode('deposit');
+            document.getElementById('dwOverlay').classList.add('open');
+            document.getElementById('dwSheet').classList.add('open');
+        }
+        function closeDWSheet() {
+            document.getElementById('dwOverlay').classList.remove('open');
+            document.getElementById('dwSheet').classList.remove('open');
+        }
+        function setDWMode(mode) {
+            dwMode = mode;
+            const depTab = document.getElementById('dwDepositTab');
+            const witTab = document.getElementById('dwWithdrawTab');
+            if (mode === 'deposit') {
+                depTab.className = 'flex-1 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold';
+                witTab.className = 'flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-white/40 text-xs font-bold';
+            } else {
+                witTab.className = 'flex-1 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold';
+                depTab.className = 'flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-white/40 text-xs font-bold';
             }
-
+        }
+        function setDWAmt(v) { document.getElementById('dwAmount').value = v; }
+        async function saveDW() {
+            const id = parseInt(document.getElementById('dwId').value);
+            const amt = parseInt(document.getElementById('dwAmount').value);
+            const errEl = document.getElementById('dwError');
             errEl.classList.add('hidden');
-            okEl.classList.add('hidden');
+            if (!amt || amt <= 0) { errEl.textContent = 'ပမာဏ ထည့်ပါ'; errEl.classList.remove('hidden'); return; }
 
-            if (!username || !password) {
-                errEl.textContent = 'Username + Password ဖြည့်ပါ!';
-                errEl.classList.remove('hidden');
-                return;
+            const action = dwMode === 'deposit' ? 'deposit' : 'withdraw';
+            const res = await fetch('/api/bettor_action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ id, action, amount: amt })
+            });
+            const data = await res.json();
+            if (data.ok) { closeDWSheet(); loadBettors(); }
+            else { errEl.textContent = data.error || 'Error'; errEl.classList.remove('hidden'); }
+        }
+
+        /* ===== Delete ===== */
+        async function deleteBettor(id, name) {
+            if (!confirm(`"${name}" account ဖျက်မလား?`)) return;
+            await fetch('/api/delete_bettor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ id })
+            });
+            loadBettors();
+        }
+
+        /* ===== Toggle Tech Info ===== */
+        function toggleTech(id) {
+            const el = document.getElementById('tech-' + id);
+            const arrow = document.getElementById('arrow-' + id);
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+                arrow.style.transform = '';
+            } else {
+                el.classList.add('open');
+                arrow.style.transform = 'rotate(180deg)';
             }
+        }
 
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+        /* ===== Swipe Handler ===== */
+        function setupSwipe(cardEl, id) {
+            let startX = 0, currentX = 0, swiping = false;
+            const main = cardEl.querySelector('.card-main');
+            const leftActions = cardEl.querySelector('.card-actions-left');
+            const rightActions = cardEl.querySelector('.card-actions-right');
 
-            try {
-                const res = await fetch('/api/create_bettor', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-                    body: JSON.stringify({ username, password, phone, balance, hot_limits })
-                });
-                const data = await res.json();
-                if (data.ok) {
-                    document.getElementById('bmUser').value = '';
-                    document.getElementById('bmPass').value = '';
-                    document.getElementById('bmPhone').value = '';
-                    document.getElementById('bmBalance').value = '';
-                    document.getElementById('bmHotLimits').value = '';
-                    okEl.textContent = `"${username}" account ဖွင့်ပြီးပါပြီ ✓`;
-                    okEl.classList.remove('hidden');
-                    loadBettors();
-                } else {
-                    errEl.textContent = data.error || 'Error';
-                    errEl.classList.remove('hidden');
+            main.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                swiping = true;
+                main.classList.add('swiping');
+            }, { passive: true });
+
+            main.addEventListener('touchmove', e => {
+                if (!swiping) return;
+                currentX = e.touches[0].clientX - startX;
+                if (Math.abs(currentX) > 10) {
+                    main.style.transform = `translateX(${currentX}px)`;
                 }
-            } catch(e) {
-                errEl.textContent = 'Network error';
-                errEl.classList.remove('hidden');
-            }
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save mr-1"></i> Account ဖွင့်ရန်';
-        });
+            }, { passive: true });
+
+            main.addEventListener('touchend', () => {
+                swiping = false;
+                main.classList.remove('swiping');
+                if (currentX > 80) {
+                    main.style.transform = 'translateX(100px)';
+                    setTimeout(() => { main.style.transform = ''; }, 1500);
+                } else if (currentX < -80) {
+                    main.style.transform = 'translateX(-100px)';
+                    setTimeout(() => { main.style.transform = ''; }, 1500);
+                } else {
+                    main.style.transform = '';
+                }
+                currentX = 0;
+            });
+        }
+
+        /* ===== Load Bettors ===== */
+        async function loadBettors() {
+            try {
+                const res = await fetch('/api/list_bettors', { headers: { 'X-CSRFToken': CSRF_TOKEN } });
+                const data = await res.json();
+                const el = document.getElementById('bmList');
+                const count = document.getElementById('bmCount');
+                if (!data.accounts || !data.accounts.length) {
+                    el.innerHTML = '<div class="text-center py-16 text-white/20"><i class="fas fa-inbox text-4xl mb-3 block"></i><p class="text-sm font-semibold">Account မရှိသေးပါ</p><p class="text-[10px] mt-1 text-white/10">+FAB ခလုတ်နှိပ်ပါ</p></div>';
+                    count.textContent = '0';
+                    document.getElementById('bmTotalBal').textContent = '0 Ks';
+                    return;
+                }
+                count.textContent = data.accounts.length;
+                const totalBal = data.accounts.reduce((s, a) => s + (a.balance || 0), 0);
+                document.getElementById('bmTotalBal').textContent = totalBal.toLocaleString() + ' Ks';
+
+                el.innerHTML = data.accounts.map((a, idx) => {
+                    const ua = parseUA(a.last_user_agent);
+                    const isOnline = a.last_seen && (Date.now() - new Date(a.last_seen).getTime()) < 300000;
+                    return `
+                    <div class="account-card anim-card" style="animation-delay:${idx * 30}ms" data-id="${a.id}">
+                        <div class="card-swipe-wrap">
+                            <div class="card-actions-left">
+                                <button class="card-action-btn" style="background:rgba(99,102,241,0.8)" onclick="openDWSheet(${a.id},'${a.username}')" title="Deposit/Withdraw">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                            </div>
+                            <div class="card-actions-right">
+                                <button class="card-action-btn" style="background:rgba(245,158,11,0.8)" onclick='openEditSheet(${JSON.stringify(a).replace(/'/g, "&#39;")})' title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="card-action-btn" style="background:rgba(239,68,68,0.8)" onclick="deleteBettor(${a.id},'${a.username}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="card-main" id="card-${a.id}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0 border border-emerald-500/30">
+                                        ${a.username.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-bold text-sm text-white truncate">${a.username}</span>
+                                            <span class="status-dot ${isOnline ? '' : 'offline'}"></span>
+                                        </div>
+                                        <div class="text-[10px] text-white/30">${a.phone || '—'}</div>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <div class="text-sm font-extrabold text-emerald-400">${(a.balance || 0).toLocaleString()}</div>
+                                        <div class="text-[9px] text-white/20">Ks</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                    <a href="/bet/?type=bettor" target="_blank" class="text-[10px] font-bold text-indigo-400/60 hover:text-indigo-400 transition">
+                                        <i class="fas fa-external-link-alt mr-0.5"></i>Open
+                                    </a>
+                                    <button onclick="toggleTech(${a.id})" class="text-[10px] font-bold text-white/20 hover:text-white/40 transition flex items-center gap-1">
+                                        <span>အသေးစိတ်</span>
+                                        <i class="fas fa-chevron-down text-[8px] transition-transform" id="arrow-${a.id}"></i>
+                                    </button>
+                                </div>
+                                <div class="tech-info" id="tech-${a.id}">
+                                    <div class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-white/5">
+                                        <span class="tech-badge bg-blue-500/15 text-blue-300"><i class="fas fa-globe"></i> ${ua.browser}</span>
+                                        ${ua.os ? `<span class="tech-badge bg-purple-500/15 text-purple-300"><i class="fas fa-mobile-alt"></i> ${ua.os}</span>` : ''}
+                                        ${a.last_ip ? `<span class="tech-badge bg-white/5 text-white/30"><i class="fas fa-map-marker-alt"></i> ${a.last_ip}</span>` : ''}
+                                        ${a.last_seen ? `<span class="tech-badge bg-emerald-500/15 text-emerald-300"><i class="fas fa-clock"></i> ${a.last_seen}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+
+                /* Setup swipe for each card */
+                data.accounts.forEach(a => {
+                    const cardEl = document.querySelector(`[data-id="${a.id}"]`);
+                    if (cardEl) setupSwipe(cardEl, a.id);
+                });
+            } catch(e) {}
+        }
 
         loadBettors();
     </script>
+
     <script>
         document.querySelectorAll('.ripple').forEach(el => {
-            el.addEventListener('pointerdown', (e) => {
+            el.addEventListener('pointerdown', e => {
                 const r = el.getBoundingClientRect();
                 el.style.setProperty('--ripple-x', (e.clientX - r.left) + 'px');
                 el.style.setProperty('--ripple-y', (e.clientY - r.top) + 'px');
