@@ -6,215 +6,94 @@
     <title>Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/effects.css">
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { height: 100dvh; height: -webkit-fill-available; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            background: #f3f4f6;
+            margin: 0; padding: 0;
             overscroll-behavior: none;
+            height: 100dvh;
+            height: -webkit-fill-available;
         }
-
-        /* ===== Glass Nav ===== */
-        .glass-nav {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* ===== Pinned Banner ===== */
-        .pinned-banner {
-            background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.05));
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(251,191,36,0.15);
-        }
-        .pinned-banner .pin-icon {
-            width: 22px; height: 22px;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 8px rgba(245,158,11,0.3);
-        }
-
-        /* ===== Message Bubbles ===== */
-        .msg-mine {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 1.25rem 1.25rem 0.3rem 1.25rem;
-            box-shadow: 0 4px 15px rgba(102,126,234,0.35);
-        }
-        .msg-other {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #e2e8f0;
-            border-radius: 1.25rem 1.25rem 1.25rem 0.3rem;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .msg-pinned { border-left: 3px solid #fbbf24 !important; }
-
-        /* ===== Chat Box ===== */
+        html { height: 100dvh; height: -webkit-fill-available; }
         #chatBox {
-            flex: 1; overflow-y: auto;
+            flex: 1;
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
-            padding-bottom: 100px;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
-
-        /* ===== Floating Input ===== */
         .chat-input-bar {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
-            padding: 0 8px calc(env(safe-area-inset-bottom, 0px) + 8px) 8px;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
-        .chat-input-inner {
-            max-width: 48rem; margin: 0 auto;
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 9999px;
-            padding: 6px 6px 6px 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .chat-input-inner input {
-            flex: 1; background: transparent; border: none; outline: none;
-            color: #e2e8f0; font-size: 0.875rem; padding: 6px 4px; min-width: 0;
-        }
-        .chat-input-inner input::placeholder { color: rgba(255,255,255,0.4); }
-        .input-glow {
-            width: 36px; height: 36px; min-width: 36px; border-radius: 50%; border: none;
-            display: flex; align-items: center; justify-content: center;
-            color: white; cursor: pointer; transition: all 0.15s ease;
-        }
-        .input-glow:active { transform: scale(0.9); }
-        .cam-btn { background: rgba(255,255,255,0.15); }
-        .cam-btn:hover { background: rgba(255,255,255,0.25); }
-        .send-btn-owner { background: linear-gradient(135deg, #667eea, #764ba2); box-shadow: 0 2px 12px rgba(102,126,234,0.5); }
-        .send-btn-player { background: linear-gradient(135deg, #11998e, #38ef7d); box-shadow: 0 2px 12px rgba(56,239,125,0.4); }
-
-        /* ===== Actions & Hover ===== */
+        .msg-mine { background: #2563eb; color: white; border-radius: 1rem 1rem 0.25rem 1rem; }
+        .msg-other { background: white; color: #1f2937; border-radius: 1rem 1rem 1rem 0.25rem; border: 1px solid #e5e7eb; }
+        .msg-pinned { border-left: 3px solid #f59e0b !important; }
         .msg-actions { opacity: 0; transition: opacity 0.15s; }
         .msg-wrap:hover .msg-actions,
         .msg-wrap:active .msg-actions { opacity: 1; }
 
-        /* ===== Quick React Bar ===== */
-        .quick-react-bar {
-            position: absolute; top: -36px; right: 0;
-            display: flex; gap: 2px;
-            background: rgba(30,27,75,0.9);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 9999px;
-            padding: 3px 4px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            opacity: 0; transform: translateY(4px) scale(0.9);
-            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-            z-index: 10;
+        .btn-ripple {
+            position: relative; overflow: hidden;
+            transition: transform 0.15s cubic-bezier(.4,0,.2,1), box-shadow 0.15s;
         }
-        .msg-wrap:hover .quick-react-bar,
-        .msg-wrap.show-react .quick-react-bar {
-            opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+        .btn-ripple:active { transform: scale(0.92); }
+        .btn-ripple::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.35) 10%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s;
         }
-        .quick-react-bar button {
-            width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent;
-            font-size: 15px; cursor: pointer; transition: transform 0.1s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .quick-react-bar button:active { transform: scale(1.4); }
+        .btn-ripple:active::after { opacity: 1; }
 
-        /* ===== Full React Picker ===== */
-        #reactPicker {
-            position: fixed; z-index: 100;
-            max-width: calc(100vw - 16px);
-            flex-wrap: wrap; justify-content: center;
-            background: rgba(30,27,75,0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 1rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            padding: 6px 8px;
+        .btn-send {
+            transition: transform 0.15s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
+        .btn-send:active { transform: scale(0.88); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        /* ===== Reaction Chips ===== */
-        .react-chip {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #cbd5e1;
+        .btn-icon {
+            transition: transform 0.12s cubic-bezier(.4,0,.2,1), background-color 0.15s;
         }
-        .react-chip.active {
-            background: rgba(99,102,241,0.3);
-            border-color: rgba(99,102,241,0.5);
-            color: #a5b4fc;
-        }
+        .btn-icon:active { transform: scale(0.85); }
+
         .emoji-btn { transition: transform 0.1s; }
-        .emoji-btn:active { transform: scale(1.3); }
+        .emoji-btn:active { transform: scale(1.35); }
 
-        /* ===== Reply Banner ===== */
-        .reply-banner {
-            background: rgba(99,102,241,0.12);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-left: 3px solid #818cf8;
-            border-radius: 0 0.5rem 0.5rem 0;
-            animation: slideDown 0.2s cubic-bezier(0.16,1,0.3,1);
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .msg-wrap { animation: msgIn 0.25s cubic-bezier(.4,0,.2,1); }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        /* ===== Typing Indicator ===== */
-        .typing-dots { display: flex; gap: 3px; align-items: center; }
-        .typing-dots span {
-            width: 5px; height: 5px; border-radius: 50%;
-            background: rgba(255,255,255,0.5);
-            animation: typingPulse 1.4s infinite;
+        #reactPicker {
+            position: fixed;
+            z-index: 100;
+            max-width: calc(100vw - 16px);
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: pickerIn 0.18s cubic-bezier(.4,0,.2,1);
         }
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typingPulse {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-4px); opacity: 1; }
-        }
+        @keyframes pickerIn { from { opacity: 0; transform: scale(0.9) translateY(6px); } }
 
-        /* ===== Online Status Dot ===== */
-        .online-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 6px rgba(34,197,94,0.6);
-            animation: onlinePulse 2s infinite;
-        }
-        @keyframes onlinePulse {
-            0%, 100% { box-shadow: 0 0 4px rgba(34,197,94,0.4); }
-            50% { box-shadow: 0 0 10px rgba(34,197,94,0.8); }
-        }
+        .nav-back { transition: transform 0.12s; }
+        .nav-back:active { transform: scale(0.85) translateX(-2px); }
 
-        /* ===== Photo ===== */
-        .msg-photo { max-width: 220px; border-radius: 0.75rem; cursor: pointer; display: block; }
-        #photoPreview { max-height: 120px; border-radius: 0.75rem; object-fit: cover; }
-        .glass-photo-preview {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .glass-photo-preview input {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #e2e8f0;
-        }
-        .glass-photo-preview input::placeholder { color: rgba(255,255,255,0.4); }
+        .clear-btn { transition: transform 0.12s, background-color 0.15s; }
+        .clear-btn:active { transform: scale(0.85) rotate(15deg); }
 
+        .msg-photo {
+            max-width: 220px;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: block;
+            transition: transform 0.2s;
+        }
+        .msg-photo:active { transform: scale(0.97); }
+        #photoPreview {
+            max-height: 120px;
+            border-radius: 0.5rem;
+            object-fit: cover;
+        }
         @media (min-width: 640px) {
-            #chatBox { padding-left: 1rem; padding-right: 1rem; }
+            #chatBox { padding: 1rem 1rem; }
             .msg-photo { max-width: 300px; }
         }
     </style>
@@ -225,46 +104,35 @@
     <input type="file" id="photoInput" accept="image/*" class="hidden">
 
     <!-- Navbar -->
-    <nav class="glass-nav text-white sticky top-0 z-50 shrink-0">
+    <nav class="text-white shadow-lg sticky top-0 z-50 shrink-0 {% if chat_role == 'player' %}bg-emerald-600{% else %}bg-indigo-600{% endif %}">
         <div class="max-w-3xl mx-auto px-2 sm:px-4 h-11 sm:h-12 flex items-center gap-2 sm:gap-3">
-            <a href="{% if chat_role == 'player' %}/bet/?type=bettor{% else %}/bet/?type=dealer{% endif %}" class="text-white/70 hover:text-white w-8 h-8 flex items-center justify-center shrink-0 transition">
+            <a href="{% if chat_role == 'player' %}/bet/?type=bettor{% else %}/bet/?type=dealer{% endif %}" class="nav-back text-white hover:text-white/80 w-8 h-8 flex items-center justify-center shrink-0">
                 <i class="fas fa-arrow-left text-sm"></i>
             </a>
             {% if chat_role == 'player' %}
-            <span class="font-bold text-xs sm:text-sm truncate"><i class="fas fa-comments mr-1 text-emerald-400"></i> Player Chat</span>
-            <div class="ml-auto flex items-center gap-2">
-                <span class="flex items-center gap-1.5 text-[10px] text-emerald-400/70"><span class="online-dot"></span> Online</span>
-                <span class="flex items-center gap-1.5 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full shrink-0">
-                    <i class="fas fa-user-circle"></i> <span id="senderName"></span>
-                </span>
-            </div>
+            <span class="font-bold text-xs sm:text-sm truncate"><i class="fas fa-comments mr-1"></i> Player Chat</span>
+            <span class="ml-auto flex items-center gap-1.5 text-[10px] bg-emerald-700 px-2 py-0.5 rounded-full shrink-0">
+                <i class="fas fa-user-circle"></i> <span id="senderName"></span>
+            </span>
             {% else %}
-            <span class="font-bold text-xs sm:text-sm truncate"><i class="fas fa-comments mr-1 text-indigo-400"></i> Owner Chat</span>
-            <div class="ml-auto flex items-center gap-2">
-                <div id="typingIndicator" class="hidden items-center gap-1.5 text-[10px] text-white/50">
-                    <div class="typing-dots"><span></span><span></span><span></span></div>
-                    <span class="typing-text">Player typing...</span>
-                </div>
-                <button id="clearChatBtn" class="btn-fx ripple w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/30 text-white/70 hover:text-red-400 flex items-center justify-center transition shrink-0" title="Clear All Messages">
-                    <i class="fas fa-trash-alt text-xs"></i>
-                </button>
-                <span class="flex items-center gap-1.5 text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-full shrink-0">
-                    <i class="fas fa-crown text-amber-400"></i> <span id="senderName"></span>
-                </span>
-            </div>
+            <span class="font-bold text-xs sm:text-sm truncate"><i class="fas fa-comments mr-1"></i> Owner Chat</span>
+            <button id="clearChatBtn" class="clear-btn ml-auto w-8 h-8 rounded-lg bg-indigo-700 hover:bg-red-600 text-white flex items-center justify-center shrink-0" title="Clear All Messages">
+                <i class="fas fa-trash-alt text-xs"></i>
+            </button>
+            <span class="flex items-center gap-1.5 text-[10px] bg-indigo-700 px-2 py-0.5 rounded-full shrink-0">
+                <i class="fas fa-crown"></i> <span id="senderName"></span>
+            </span>
             {% endif %}
         </div>
     </nav>
 
-    <!-- Pinned Banner -->
-    <div id="pinnedSection" class="hidden pinned-banner px-3 sm:px-4 py-2 shrink-0 max-w-3xl mx-auto w-full">
-        <div class="flex items-center gap-2">
-            <div class="pin-icon shrink-0"><i class="fas fa-thumbtack text-[9px] text-white"></i></div>
-            <div class="flex-1 min-w-0">
-                <div class="text-[10px] font-bold text-amber-400/80 mb-0.5">Pinned Message</div>
-                <div id="pinnedText" class="text-[11px] text-white/70 truncate"></div>
-            </div>
-            <button id="closePinned" class="text-white/30 hover:text-white/70 text-xs shrink-0 w-6 h-6 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    <!-- Pinned Section -->
+    <div id="pinnedSection" class="hidden bg-amber-50 border-b border-amber-200 px-3 sm:px-4 py-2 shrink-0 max-w-3xl mx-auto w-full">
+        <div class="flex items-center gap-2 mb-1">
+            <i class="fas fa-thumbtack text-amber-500 text-xs shrink-0"></i>
+            <span class="text-[11px] sm:text-xs font-bold text-amber-700 shrink-0">Pinned</span>
+            <div id="pinnedList" class="flex-1 overflow-x-auto whitespace-nowrap space-x-2 scrollbar-hide"></div>
+            <button id="closePinned" class="ml-1 text-amber-400 hover:text-amber-600 text-xs shrink-0 w-6 h-6 flex items-center justify-center"><i class="fas fa-times"></i></button>
         </div>
     </div>
 
@@ -272,43 +140,32 @@
     <div id="chatBox" class="flex-1 overflow-y-auto px-2 sm:px-4 py-2 sm:py-3 max-w-3xl mx-auto w-full"></div>
 
     <!-- Photo Preview -->
-    <div id="photoPreviewWrap" class="hidden glass-photo-preview px-3 py-2 shrink-0">
+    <div id="photoPreviewWrap" class="hidden bg-white border-t border-gray-200 px-3 py-2 max-w-3xl mx-auto w-full shrink-0">
         <div class="relative inline-block">
             <img id="photoPreview" src="" alt="">
             <button id="removePhoto" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center shadow"><i class="fas fa-times"></i></button>
         </div>
         <input id="captionInput" type="text" placeholder="Caption (optional)..."
-            class="mt-2 w-full rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400/50">
+            class="mt-2 w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400">
     </div>
 
-    <!-- Reply Banner (hidden by default) -->
-    <div id="replyBanner" class="hidden reply-banner px-3 sm:px-4 py-2 shrink-0 max-w-3xl mx-auto w-full">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-reply text-indigo-400 text-[11px] shrink-0"></i>
-            <div class="flex-1 min-w-0">
-                <div class="text-[10px] font-bold text-indigo-400/80" id="replyToName"></div>
-                <div class="text-[11px] text-white/60 truncate" id="replyToText"></div>
-            </div>
-            <button id="cancelReply" class="text-white/30 hover:text-white/70 text-xs shrink-0 w-5 h-5 flex items-center justify-center"><i class="fas fa-times"></i></button>
-        </div>
-    </div>
-
-    <!-- Floating Input -->
-    <div class="chat-input-bar">
-        <div class="chat-input-inner">
-            <button id="photoBtn" class="input-glow cam-btn" title="Send Photo">
+    <!-- Input -->
+    <div class="chat-input-bar bg-white border-t border-gray-200 px-2 sm:px-3 py-2 shrink-0">
+        <div class="max-w-3xl mx-auto flex items-center gap-1.5 sm:gap-2">
+            <button id="photoBtn" class="btn-icon w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center shrink-0" title="Send Photo">
                 <i class="fas fa-camera text-sm"></i>
             </button>
-            <input id="chatInput" type="text" placeholder="Type a message...">
-            <button id="chatSend" class="input-glow {% if chat_role == 'player' %}send-btn-player{% else %}send-btn-owner{% endif %}">
-                <i class="fas fa-paper-plane text-sm"></i>
+            <input id="chatInput" type="text" placeholder="Message..."
+                class="flex-1 border border-gray-300 rounded-full px-3 sm:px-4 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 min-w-0">
+            <button id="chatSend" class="btn-send w-9 h-9 sm:w-10 sm:h-10 rounded-full {% if chat_role == 'player' %}bg-emerald-600 hover:bg-emerald-700{% else %}bg-indigo-600 hover:bg-indigo-700{% endif %} text-white flex items-center justify-center shrink-0">
+                <i class="fas fa-paper-plane text-xs sm:text-sm"></i>
             </button>
         </div>
     </div>
 
     <!-- Photo Modal -->
     <div id="photoModal" class="hidden fixed inset-0 bg-black/90 z-[200] flex items-center justify-center cursor-zoom-out" onclick="this.classList.add('hidden')">
-        <img id="photoModalImg" src="" class="max-w-[95vw] max-h-[90vh] rounded-xl shadow-2xl">
+        <img id="photoModalImg" src="" class="max-w-[95vw] max-h-[90vh] rounded-lg">
     </div>
 
     <script>
@@ -320,14 +177,12 @@
         const photoPreviewWrap = document.getElementById('photoPreviewWrap');
         const photoPreview = document.getElementById('photoPreview');
         const captionInput = document.getElementById('captionInput');
-        const replyBanner = document.getElementById('replyBanner');
         const isOwner = chatRole === 'owner';
         let lastId = 0;
         let myType = chatRole;
         let myName = '';
         let allMessages = {};
         let pendingPhoto = null;
-        let replyingTo = null;
 
         const EMOJIS = ['👍','❤️','😂','😮','😢','🔥','💯','🙏'];
 
@@ -347,10 +202,11 @@
 
         function renderReactions(msgId, reactions) {
             if (!reactions || !Object.keys(reactions).length) return '';
-            let html = '<div class="flex flex-wrap gap-1 mt-1.5">';
+            let html = '<div class="flex flex-wrap gap-1 mt-1">';
             for (const [emoji, info] of Object.entries(reactions)) {
                 const iMy = info.users.includes(myType + ':' + myName);
-                html += `<button onclick="toggleReact(${msgId},'${emoji}')" class="emoji-btn inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] react-chip ${iMy ? 'active' : ''}">
+                const bg = iMy ? 'bg-blue-100 border-blue-300' : 'bg-gray-100 border-gray-200';
+                html += `<button onclick="toggleReact(${msgId},'${emoji}')" class="emoji-btn inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] border ${bg} hover:bg-blue-50">
                     <span>${emoji}</span><span class="font-bold">${info.count}</span>
                 </button>`;
             }
@@ -361,31 +217,21 @@
         function renderMsg(m) {
             const isMine = m.sender_type === myType;
             const cls = isMine ? 'msg-mine ml-auto' : 'msg-other mr-auto';
-            const nameColor = isMine ? 'text-white/70' : 'text-white/50';
-            const icon = m.sender_type === 'owner' ? '<i class="fas fa-crown mr-0.5 text-amber-400"></i>' : '<i class="fas fa-user-circle mr-0.5 text-emerald-400"></i>';
+            const nameColor = isMine ? (myType === 'player' ? 'text-emerald-200' : 'text-indigo-200') : 'text-gray-400';
+            const icon = m.sender_type === 'owner' ? '<i class="fas fa-crown mr-0.5"></i>' : '<i class="fas fa-user-circle mr-0.5"></i>';
             const pinCls = m.is_pinned ? 'msg-pinned' : '';
-            const pinBtn = isOwner ? `<button onclick="event.stopPropagation();togglePin(${m.id})" class="msg-actions text-[10px] w-5 h-5 flex items-center justify-center ${m.is_pinned ? 'text-amber-400' : 'text-white/40 hover:text-amber-400'}" title="${m.is_pinned ? 'Unpin' : 'Pin'}">
+            const pinBtn = isOwner ? `<button onclick="togglePin(${m.id})" class="msg-actions text-[10px] w-5 h-5 flex items-center justify-center ${m.is_pinned ? 'text-amber-400' : 'text-gray-400 hover:text-amber-400'}" title="${m.is_pinned ? 'Unpin' : 'Pin'}">
                 <i class="fas fa-thumbtack"></i></button>` : '';
-            const reactBtn = `<button onclick="event.stopPropagation();showReactPicker(event,${m.id})" class="msg-actions text-[10px] w-5 h-5 flex items-center justify-center text-white/40 hover:text-indigo-300" title="React">
+            const reactBtn = `<button onclick="showReactPicker(event,${m.id})" class="msg-actions text-[10px] w-5 h-5 flex items-center justify-center text-gray-400 hover:text-blue-400" title="React">
                 <i class="fas fa-smile"></i></button>`;
-            const replyBtn = `<button onclick="event.stopPropagation();startReply(${m.id})" class="msg-actions text-[10px] w-5 h-5 flex items-center justify-center text-white/40 hover:text-cyan-300" title="Reply">
-                <i class="fas fa-reply"></i></button>`;
-            const pinLabel = m.is_pinned ? '<span class="text-[9px] text-amber-400 font-bold"><i class="fas fa-thumbtack mr-0.5"></i>Pinned</span>' : '';
+            const pinLabel = m.is_pinned ? '<span class="text-[9px] text-amber-500 font-bold"><i class="fas fa-thumbtack mr-0.5"></i>Pinned</span>' : '';
             const photoHtml = m.photo ? `<img src="${m.photo}" class="msg-photo mb-1" onclick="showPhotoModal('${m.photo}')" loading="lazy">` : '';
             const msgHtml = m.message ? `<div class="text-[13px] sm:text-sm leading-snug break-words">${m.message}</div>` : '';
 
-            const quickReact = `<div class="quick-react-bar">
-                <button onclick="event.stopPropagation();quickReact(${m.id},'👍')">👍</button>
-                <button onclick="event.stopPropagation();quickReact(${m.id},'❤️')">❤️</button>
-                <button onclick="event.stopPropagation();quickReact(${m.id},'🔥')">🔥</button>
-                <button onclick="event.stopPropagation();showReactPicker(event,${m.id})" style="font-size:12px;color:rgba(255,255,255,0.5);">⋯</button>
-            </div>`;
-
-            return `<div class="msg-wrap max-w-[85%] sm:max-w-[80%] ${cls} px-3.5 py-2.5 mb-2.5 ${pinCls} relative" data-msgid="${m.id}">
-                ${quickReact}
+            return `<div class="msg-wrap max-w-[85%] sm:max-w-[80%] ${cls} px-3 py-2 mb-2 shadow-sm ${pinCls}" data-msgid="${m.id}">
                 <div class="flex items-center gap-0.5">
                     <div class="text-[10px] font-bold ${nameColor} mb-0.5 flex-1 min-w-0 truncate">${icon}${m.sender_name} · ${m.time}</div>
-                    ${pinBtn}${reactBtn}${replyBtn}
+                    ${pinBtn}${reactBtn}
                 </div>
                 ${pinLabel}
                 ${photoHtml}
@@ -397,13 +243,14 @@
         function renderAll() {
             const pinnedMsgs = Object.values(allMessages).filter(m => m.is_pinned);
             const pinnedSection = document.getElementById('pinnedSection');
-            const pinnedText = document.getElementById('pinnedText');
+            const pinnedList = document.getElementById('pinnedList');
 
             if (pinnedMsgs.length) {
-                const latest = pinnedMsgs[pinnedMsgs.length - 1];
-                const icon = latest.sender_type === 'owner' ? '👑' : '🟢';
                 pinnedSection.classList.remove('hidden');
-                pinnedText.textContent = `${icon} ${latest.sender_name}: ${latest.message || '📷 Photo'}`;
+                pinnedList.innerHTML = pinnedMsgs.map(m => {
+                    const icon = m.sender_type === 'owner' ? '<i class="fas fa-crown mr-0.5"></i>' : '<i class="fas fa-user-circle mr-0.5"></i>';
+                    return `<span class="inline-block text-[11px] text-amber-800 truncate max-w-[200px]">${icon}<b>${m.sender_name}</b>: ${m.message || '📷 Photo'}</span>`;
+                }).join('');
             } else {
                 pinnedSection.classList.add('hidden');
             }
@@ -416,21 +263,12 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        /* ===== Quick React ===== */
-        async function quickReact(msgId, emoji) {
-            const d = await apiPost('/api/chat/react', { id: msgId, emoji: emoji });
-            if (d.ok && allMessages[msgId]) {
-                allMessages[msgId].reactions = d.reactions;
-                renderAll();
-            }
-        }
-
-        /* ===== Full React Picker ===== */
         function showReactPicker(e, msgId) {
             e.stopPropagation();
             closeReactPicker();
             const picker = document.createElement('div');
             picker.id = 'reactPicker';
+            picker.className = 'bg-white rounded-xl shadow-xl border border-gray-200 px-2 py-1.5 flex gap-1';
             const rect = e.target.getBoundingClientRect();
             let top = rect.top - 48;
             if (top < 8) top = rect.bottom + 6;
@@ -455,30 +293,11 @@
         }
         document.addEventListener('click', closeReactPicker);
 
-        /* ===== Reply ===== */
-        function startReply(msgId) {
-            const m = allMessages[msgId];
-            if (!m) return;
-            replyingTo = msgId;
-            const icon = m.sender_type === 'owner' ? '👑' : '🟢';
-            document.getElementById('replyToName').textContent = `${icon} ${m.sender_name}`;
-            document.getElementById('replyToText').textContent = m.message || '📷 Photo';
-            replyBanner.classList.remove('hidden');
-            chatInput.focus();
-        }
-
-        document.getElementById('cancelReply').addEventListener('click', () => {
-            replyingTo = null;
-            replyBanner.classList.add('hidden');
-        });
-
-        /* ===== Photo Modal ===== */
         function showPhotoModal(src) {
             document.getElementById('photoModalImg').src = src;
             document.getElementById('photoModal').classList.remove('hidden');
         }
 
-        /* ===== Pin & React ===== */
         async function togglePin(msgId) {
             const d = await apiPost('/api/chat/pin', { id: msgId });
             if (d.ok && allMessages[msgId]) {
@@ -495,25 +314,18 @@
             }
         }
 
-        /* ===== Send Message ===== */
         async function sendMessage() {
             const text = chatInput.value.trim();
             if (!text && !pendingPhoto) return;
-            if (pendingPhoto) { await uploadPhoto(); return; }
-            chatInput.value = '';
-            let payload = { message: text };
-            if (replyingTo && allMessages[replyingTo]) {
-                const rm = allMessages[replyingTo];
-                payload.reply_to = replyingTo;
-                payload.message = `↩️ @${rm.sender_name}: ${rm.message || '📷 Photo'}\n\n${text}`;
+            if (pendingPhoto) {
+                await uploadPhoto();
+                return;
             }
-            replyingTo = null;
-            replyBanner.classList.add('hidden');
-            await apiPost('/api/chat/send', payload);
+            chatInput.value = '';
+            await apiPost('/api/chat/send', { message: text });
             poll();
         }
 
-        /* ===== Upload Photo ===== */
         async function uploadPhoto() {
             if (!pendingPhoto) return;
             const fd = new FormData();
@@ -529,9 +341,15 @@
                     body: fd
                 });
                 const d = await res.json();
-                if (d.ok) { clearPhoto(); poll(); }
-                else { alert(d.error || 'Upload failed'); }
-            } catch(e) { alert('Upload failed'); }
+                if (d.ok) {
+                    clearPhoto();
+                    poll();
+                } else {
+                    alert(d.error || 'Upload failed');
+                }
+            } catch(e) {
+                alert('Upload failed');
+            }
             sendBtn.innerHTML = '<i class="fas fa-paper-plane text-xs sm:text-sm"></i>';
             sendBtn.disabled = false;
         }
@@ -555,7 +373,6 @@
         });
         document.getElementById('removePhoto').addEventListener('click', clearPhoto);
 
-        /* ===== Poll ===== */
         async function poll() {
             const data = await apiGet('/api/chat/poll?after=' + lastId);
             if (data.ok && data.messages.length) {
@@ -585,7 +402,6 @@
             document.getElementById('pinnedSection').classList.add('hidden');
         });
 
-        /* ===== Init ===== */
         (async function init() {
             if (myType === 'player') {
                 try {
@@ -602,19 +418,6 @@
         })();
 
         setInterval(poll, 3000);
-    </script>
-    <script>
-        document.querySelectorAll('.ripple').forEach(el => {
-            el.addEventListener('pointerdown', (e) => {
-                const r = el.getBoundingClientRect();
-                el.style.setProperty('--ripple-x', (e.clientX - r.left) + 'px');
-                el.style.setProperty('--ripple-y', (e.clientY - r.top) + 'px');
-                el.classList.remove('rippling');
-                void el.offsetWidth;
-                el.classList.add('rippling');
-            });
-            el.addEventListener('animationend', () => el.classList.remove('rippling'));
-        });
     </script>
 </body>
 </html>

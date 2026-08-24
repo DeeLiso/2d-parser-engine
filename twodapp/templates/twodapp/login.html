@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ဝင်ရောက်ရန် (Login)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/effects.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -24,7 +23,9 @@
             max-width: 380px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
             text-align: center;
+            animation: cardIn 0.35s cubic-bezier(.4,0,.2,1);
         }
+        @keyframes cardIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } }
         .login-title { font-size: 1.4rem; font-weight: 800; color: #1e1b4b; margin-bottom: 0.25rem; }
         .login-sub { font-size: 0.8rem; color: #6b7280; margin-bottom: 2rem; }
         .role-btn {
@@ -38,47 +39,65 @@
             text-decoration: none;
             font-weight: 700;
             font-size: 1.1rem;
-            transition: transform 0.12s, box-shadow 0.12s;
+            transition: transform 0.15s cubic-bezier(.4,0,.2,1), box-shadow 0.15s;
             margin-bottom: 1rem;
             border: none;
             cursor: pointer;
             color: white;
+            position: relative;
+            overflow: hidden;
         }
-        .role-btn:active { transform: scale(0.97); }
+        .role-btn::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .role-btn:active { transform: scale(0.95); }
+        .role-btn:active::after { opacity: 1; }
         .role-bettor { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 6px 20px rgba(16,185,129,0.3); }
         .role-dealer { background: linear-gradient(135deg, #d97706, #f59e0b); box-shadow: 0 6px 20px rgba(245,158,11,0.3); }
         .role-btn i { font-size: 1.3rem; }
         .role-sub { font-size: 0.65rem; font-weight: 400; opacity: 0.8; }
 
-        .dealer-form { display: none; margin-top: 1.5rem; text-align: left; }
+        .dealer-form { display: none; margin-top: 1.5rem; text-align: left; animation: formIn 0.25s cubic-bezier(.4,0,.2,1); }
+        @keyframes formIn { from { opacity: 0; transform: translateY(8px); } }
         .dealer-form.show { display: block; }
         .field { margin-bottom: 1rem; }
         .field label { font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; display: block; }
         .field input {
             width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #d1d5db; border-radius: 0.5rem;
-            font-size: 0.9rem; outline: none; box-sizing: border-box; transition: border-color 0.15s;
+            font-size: 0.9rem; outline: none; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s;
         }
         .field input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
         .submit-btn {
             width: 100%; padding: 0.8rem; border: none; border-radius: 0.5rem; font-size: 1rem;
             font-weight: 700; cursor: pointer; color: white; background: linear-gradient(135deg, #d97706, #f59e0b);
-            transition: transform 0.1s;
+            transition: transform 0.15s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(245,158,11,0.25);
+            position: relative; overflow: hidden;
         }
-        .submit-btn:active { transform: scale(0.97); }
+        .submit-btn::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .submit-btn:active { transform: scale(0.95); box-shadow: 0 2px 6px rgba(245,158,11,0.15); }
+        .submit-btn:active::after { opacity: 1; }
         .error-msg { color: #dc2626; font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; display: none; }
-        .back-link { font-size: 0.75rem; color: #6b7280; cursor: pointer; margin-top: 1rem; display: inline-block; }
+        .back-link { font-size: 0.75rem; color: #6b7280; cursor: pointer; margin-top: 1rem; display: inline-block; transition: color 0.15s, transform 0.12s; }
+        .back-link:active { transform: scale(0.95); }
         .back-link:hover { color: #374151; }
     </style>
 </head>
 <body>
-    <div class="login-card login-card-fx">
+    <div class="login-card">
         <!-- Role Selection -->
         <div id="roleSelect">
             <div style="font-size:2rem; margin-bottom:0.5rem;">🎲</div>
             <div class="login-title">2D FPEngine</div>
             <div class="login-sub">ဝင်ရောက်ရန် ရွေးပါ</div>
 
-            <button class="role-btn role-bettor role-btn-fx ripple" onclick="showBettorLogin()">
+            <button class="role-btn role-bettor" onclick="showBettorLogin()">
                 <i class="fas fa-pen-to-square"></i>
                 <div>
                     <div>Player</div>
@@ -86,7 +105,7 @@
                 </div>
             </button>
 
-            <button class="role-btn role-dealer role-btn-fx ripple" onclick="showDealerLogin()">
+            <button class="role-btn role-dealer" onclick="showDealerLogin()">
                 <i class="fas fa-crown"></i>
                 <div>
                     <div>Owner</div>
@@ -108,7 +127,7 @@
                 <input id="bmLoginPass" type="password" placeholder="Password">
             </div>
             <div id="bmLoginError" class="error-msg"></div>
-            <button id="bmLoginBtn" class="submit-btn submit-btn-fx ripple">
+            <button id="bmLoginBtn" class="submit-btn">
                 <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
             </button>
             <div class="back-link" onclick="showRoles()"><i class="fas fa-arrow-left mr-1"></i> နောက်သို့</div>
@@ -134,7 +153,7 @@
                     <input type="password" name="password" required placeholder="Password">
                 </div>
                 <input type="hidden" name="next" value="{{ next }}">
-                <button type="submit" class="submit-btn submit-btn-fx ripple">
+                <button type="submit" class="submit-btn">
                     <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
                 </button>
             </form>
@@ -177,18 +196,6 @@
             btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်';
         });
         document.getElementById('bmLoginPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('bmLoginBtn').click(); });
-
-        document.querySelectorAll('.ripple').forEach(el => {
-            el.addEventListener('pointerdown', (e) => {
-                const r = el.getBoundingClientRect();
-                el.style.setProperty('--ripple-x', (e.clientX - r.left) + 'px');
-                el.style.setProperty('--ripple-y', (e.clientY - r.top) + 'px');
-                el.classList.remove('rippling');
-                void el.offsetWidth;
-                el.classList.add('rippling');
-            });
-            el.addEventListener('animationend', () => el.classList.remove('rippling'));
-        });
     </script>
 </body>
 </html>
