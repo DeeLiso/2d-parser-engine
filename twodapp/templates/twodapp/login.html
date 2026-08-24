@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ဝင်ရောက်ရန် (Login)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/effects.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -70,14 +71,14 @@
     </style>
 </head>
 <body>
-    <div class="login-card">
+    <div class="login-card login-card-fx">
         <!-- Role Selection -->
         <div id="roleSelect">
             <div style="font-size:2rem; margin-bottom:0.5rem;">🎲</div>
             <div class="login-title">2D FPEngine</div>
             <div class="login-sub">ဝင်ရောက်ရန် ရွေးပါ</div>
 
-            <button class="role-btn role-bettor" onclick="showBettorLogin()">
+            <button class="role-btn role-bettor role-btn-fx ripple" onclick="showBettorLogin()">
                 <i class="fas fa-pen-to-square"></i>
                 <div>
                     <div>Player</div>
@@ -85,7 +86,7 @@
                 </div>
             </button>
 
-            <button class="role-btn role-dealer" onclick="showDealerLogin()">
+            <button class="role-btn role-dealer role-btn-fx ripple" onclick="showDealerLogin()">
                 <i class="fas fa-crown"></i>
                 <div>
                     <div>Owner</div>
@@ -107,7 +108,7 @@
                 <input id="bmLoginPass" type="password" placeholder="Password">
             </div>
             <div id="bmLoginError" class="error-msg"></div>
-            <button id="bmLoginBtn" class="submit-btn">
+            <button id="bmLoginBtn" class="submit-btn submit-btn-fx ripple">
                 <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
             </button>
             <div class="back-link" onclick="showRoles()"><i class="fas fa-arrow-left mr-1"></i> နောက်သို့</div>
@@ -133,7 +134,7 @@
                     <input type="password" name="password" required placeholder="Password">
                 </div>
                 <input type="hidden" name="next" value="{{ next }}">
-                <button type="submit" class="submit-btn">
+                <button type="submit" class="submit-btn submit-btn-fx ripple">
                     <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
                 </button>
             </form>
@@ -176,6 +177,18 @@
             btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်';
         });
         document.getElementById('bmLoginPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('bmLoginBtn').click(); });
+
+        document.querySelectorAll('.ripple').forEach(el => {
+            el.addEventListener('pointerdown', (e) => {
+                const r = el.getBoundingClientRect();
+                el.style.setProperty('--ripple-x', (e.clientX - r.left) + 'px');
+                el.style.setProperty('--ripple-y', (e.clientY - r.top) + 'px');
+                el.classList.remove('rippling');
+                void el.offsetWidth;
+                el.classList.add('rippling');
+            });
+            el.addEventListener('animationend', () => el.classList.remove('rippling'));
+        });
     </script>
 </body>
 </html>

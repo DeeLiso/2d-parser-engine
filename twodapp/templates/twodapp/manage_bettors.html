@@ -6,6 +6,7 @@
     <title>Player Account များ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/effects.css">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; }
         .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -19,31 +20,31 @@
     <nav class="bg-emerald-600 text-white shadow-lg sticky top-0 z-50">
         <div class="max-w-3xl mx-auto px-3 h-12 flex items-center gap-2 overflow-x-auto min-w-max">
             <a href="/bet/?type=dealer"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
             <a href="/bet/?type=dealer"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-home"></i> Home
             </a>
             <a href="/records/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-list-ol"></i> မှတ်တမ်း
             </a>
             <a href="/bet/manage_bettors/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-emerald-700 text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white text-emerald-700 text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-user-plus"></i> Player ဖွင့်ရန်
             </a>
             <a href="/ledger/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-th"></i> Ledger
             </a>
             <a href="/limit/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-exclamation-triangle"></i> Limit
             </a>
             <a href="/chat/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-white/20 hover:bg-white/30 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-comments"></i> Chat
             </a>
         </div>
@@ -78,7 +79,7 @@
             </div>
             <div id="bmError" class="text-red-500 text-xs font-semibold mt-2 hidden"></div>
             <div id="bmSuccess" class="text-emerald-600 text-xs font-semibold mt-2 hidden"></div>
-            <button id="bmSaveBtn" class="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition">
+            <button id="bmSaveBtn" class="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition btn-fx ripple">
                 <i class="fas fa-save mr-1"></i> Account ဖွင့်ရန်
             </button>
         </div>
@@ -129,7 +130,7 @@
             <div id="editError" class="text-red-500 text-xs font-semibold px-5 hidden"></div>
             <div class="px-5 pb-5 flex gap-2">
                 <button onclick="closeEditModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2 rounded-lg text-sm transition">Cancel</button>
-                <button onclick="saveEdit()" id="editSaveBtn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition"><i class="fas fa-save mr-1"></i> Save</button>
+                <button onclick="saveEdit()" id="editSaveBtn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition btn-fx ripple"><i class="fas fa-save mr-1"></i> Save</button>
             </div>
         </div>
     </div>
@@ -193,7 +194,7 @@
                                     <i class="fas fa-pen"></i>
                                 </button>
                                 <button onclick="deleteBettor(${a.id}, '${a.username}')"
-                                    class="text-xs bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600 transition" title="Delete">
+                                    class="text-xs bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600 transition btn-fx ripple" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -338,6 +339,19 @@
         });
 
         loadBettors();
+    </script>
+    <script>
+        document.querySelectorAll('.ripple').forEach(el => {
+            el.addEventListener('pointerdown', (e) => {
+                const r = el.getBoundingClientRect();
+                el.style.setProperty('--ripple-x', (e.clientX - r.left) + 'px');
+                el.style.setProperty('--ripple-y', (e.clientY - r.top) + 'px');
+                el.classList.remove('rippling');
+                void el.offsetWidth;
+                el.classList.add('rippling');
+            });
+            el.addEventListener('animationend', () => el.classList.remove('rippling'));
+        });
     </script>
 </body>
 </html>

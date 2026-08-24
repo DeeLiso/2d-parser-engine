@@ -7,6 +7,7 @@
     <title>Limit ဂဏန်းများ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/effects.css">
     <script src="{% static 'js/security.js' %}" defer></script>
     <style>
         body {
@@ -108,7 +109,7 @@
                             <i class="fas fa-user-circle mr-1"></i>{{ user.username }}
                         </span>
                         <button type="submit" title="Logout"
-                                class="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-100 transition transform hover:scale-105">
+                                class="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-100 transition transform hover:scale-105 btn-fx ripple">
                             <i class="fas fa-sign-out-alt text-sm"></i>
                         </button>
                     </form>
@@ -121,27 +122,27 @@
     <div class="bg-red-50 border-b border-red-200 overflow-x-auto">
         <div class="max-w-7xl mx-auto px-3 py-2 flex items-center gap-2 min-w-max">
             <a href="/bet/?type=dealer"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-home"></i> Home
             </a>
             <a href="/records/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-list-ol"></i> မှတ်တမ်း
             </a>
             <a href="/bet/manage_bettors/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-user-plus"></i> Player ဖွင့်ရန်
             </a>
             <a href="/ledger/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-th"></i> Ledger
             </a>
             <a href="/limit/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold whitespace-nowrap transition ring-2 ring-red-300">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-red-600 text-white text-xs font-bold whitespace-nowrap transition ring-2 ring-red-300">
                 <i class="fas fa-exclamation-triangle"></i> Limit
             </a>
             <a href="/chat/"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold whitespace-nowrap transition">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg nav-btn ripple bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold whitespace-nowrap transition">
                 <i class="fas fa-comments"></i> Chat
             </a>
         </div>
@@ -264,5 +265,18 @@
             </a>
         </div>
     </footer>
+    <script>
+        document.querySelectorAll('.ripple').forEach(el => {
+            el.addEventListener('pointerdown', (e) => {
+                const r = el.getBoundingClientRect();
+                el.style.setProperty('--ripple-x', (e.clientX - r.left) + 'px');
+                el.style.setProperty('--ripple-y', (e.clientY - r.top) + 'px');
+                el.classList.remove('rippling');
+                void el.offsetWidth;
+                el.classList.add('rippling');
+            });
+            el.addEventListener('animationend', () => el.classList.remove('rippling'));
+        });
+    </script>
 </body>
 </html>

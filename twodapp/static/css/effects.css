@@ -1,0 +1,172 @@
+/* ===== Ripple Effect ===== */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+.ripple::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    width: 100px;
+    height: 100px;
+    margin-top: -50px;
+    margin-left: -50px;
+    top: var(--ripple-y, 50%);
+    left: var(--ripple-x, 50%);
+    transform: scale(0);
+    opacity: 1;
+    pointer-events: none;
+}
+.ripple.rippling::after {
+    animation: rippleAnim 0.5s ease-out forwards;
+}
+@keyframes rippleAnim {
+    0% { transform: scale(0); opacity: 0.6; }
+    100% { transform: scale(4); opacity: 0; }
+}
+
+/* ===== Button Base Effects ===== */
+.btn-fx {
+    position: relative;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    user-select: none;
+}
+.btn-fx:active {
+    transform: scale(0.93);
+    filter: brightness(0.92);
+}
+
+/* ===== Glow Buttons ===== */
+.btn-glow-green { box-shadow: 0 2px 8px rgba(34,197,94,0.25); }
+.btn-glow-green:hover { box-shadow: 0 4px 20px rgba(34,197,94,0.45); transform: translateY(-1px); }
+.btn-glow-green:active { transform: scale(0.94) translateY(0); box-shadow: 0 2px 8px rgba(34,197,94,0.25); }
+
+.btn-glow-indigo { box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
+.btn-glow-indigo:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.45); transform: translateY(-1px); }
+.btn-glow-indigo:active { transform: scale(0.94) translateY(0); box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
+
+.btn-glow-red { box-shadow: 0 2px 8px rgba(239,68,68,0.25); }
+.btn-glow-red:hover { box-shadow: 0 4px 20px rgba(239,68,68,0.45); transform: translateY(-1px); }
+.btn-glow-red:active { transform: scale(0.94) translateY(0); box-shadow: 0 2px 8px rgba(239,68,68,0.25); }
+
+.btn-glow-amber { box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+.btn-glow-amber:hover { box-shadow: 0 4px 20px rgba(245,158,11,0.45); transform: translateY(-1px); }
+.btn-glow-amber:active { transform: scale(0.94) translateY(0); box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+
+.btn-glow-blue { box-shadow: 0 2px 8px rgba(59,130,246,0.25); }
+.btn-glow-blue:hover { box-shadow: 0 4px 20px rgba(59,130,246,0.45); transform: translateY(-1px); }
+.btn-glow-blue:active { transform: scale(0.94) translateY(0); box-shadow: 0 2px 8px rgba(59,130,246,0.25); }
+
+.btn-glow-emerald { box-shadow: 0 2px 8px rgba(16,185,129,0.25); }
+.btn-glow-emerald:hover { box-shadow: 0 4px 20px rgba(16,185,129,0.45); transform: translateY(-1px); }
+.btn-glow-emerald:active { transform: scale(0.94) translateY(0); box-shadow: 0 2px 8px rgba(16,185,129,0.25); }
+
+/* ===== Navbar Button Effects ===== */
+.nav-btn {
+    position: relative;
+    transition: all 0.15s ease;
+    overflow: hidden;
+}
+.nav-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.nav-btn:hover::before { opacity: 1; }
+.nav-btn:active { transform: scale(0.94); }
+
+/* ===== Keypad Effects ===== */
+.key-fx {
+    position: relative;
+    transition: all 0.1s ease-in-out;
+    border-radius: 0.625rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    background: white;
+    border: 1px solid #e5e7eb;
+}
+.key-fx:active {
+    background-color: #e0e7ff;
+    transform: scale(0.88);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.key-fx.key-num:active {
+    background-color: #ccfbf1;
+    transform: scale(0.88);
+}
+.key-fx.key-action:active {
+    background-color: #fee2e2;
+    transform: scale(0.88);
+}
+
+/* ===== Login Card Effects ===== */
+.login-card-fx {
+    animation: cardSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes cardSlideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.role-btn-fx {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.role-btn-fx:hover {
+    transform: translateY(-2px);
+}
+.role-btn-fx:active {
+    transform: scale(0.96) translateY(0);
+    filter: brightness(0.9);
+}
+
+.submit-btn-fx {
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+}
+.submit-btn-fx:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(217,119,6,0.4);
+}
+.submit-btn-fx:active {
+    transform: scale(0.96) translateY(0);
+    box-shadow: none;
+}
+
+/* ===== Card Pop-in Animation ===== */
+.pop-in {
+    animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ===== Haptic Vibration (mobile) ===== */
+@media (hover: none) and (pointer: coarse) {
+    .btn-fx:active,
+    .nav-btn:active,
+    .key-fx:active,
+    .role-btn-fx:active,
+    .submit-btn-fx:active {
+        transition-duration: 0.05s;
+    }
+}
+
+/* ===== Desktop Enhancements ===== */
+@media (hover: hover) {
+    .btn-fx:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+    }
+    .nav-btn:hover {
+        transform: translateY(-1px);
+    }
+}
