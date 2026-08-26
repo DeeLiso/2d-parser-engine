@@ -172,6 +172,62 @@
             </div>
         </div>
 
+        {% if is_owner %}
+        <!-- Limit Management -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                <h2 class="font-bold text-gray-700 text-sm"><i class="fas fa-exclamation-triangle mr-2 text-red-500"></i>Limit Management</h2>
+            </div>
+            <div class="p-4 space-y-4">
+                <!-- Global Limit -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 mb-1 block">Global Limit (all numbers)</label>
+                    <div class="flex gap-2">
+                        <input id="globalLimitInput" type="number" min="0" placeholder="e.g. 50000"
+                            value="{{ global_limit }}"
+                            class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
+                        <button onclick="setGlobalLimit()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-lg transition active:scale-95 whitespace-nowrap">
+                            <i class="fas fa-save mr-1"></i> Set
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Specific Limits -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 mb-1 block">Specific Number Limit</label>
+                    <div class="flex gap-2">
+                        <input id="specNumInput" type="number" min="0" max="99" placeholder="00-99"
+                            class="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
+                        <input id="specLimitInput" type="number" min="0" placeholder="Limit amount"
+                            class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
+                        <button onclick="setSpecificLimit()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-lg transition active:scale-95 whitespace-nowrap">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Specific Limits -->
+                <div id="specLimitsList" class="space-y-1"></div>
+
+                <div id="limitMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
+            </div>
+        </div>
+
+        <!-- Clear Data -->
+        <div class="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden">
+            <div class="px-4 py-3 bg-red-50 border-b border-red-100">
+                <h2 class="font-bold text-red-700 text-sm"><i class="fas fa-trash-alt mr-2"></i>Clear Data</h2>
+            </div>
+            <div class="p-4">
+                <p class="text-xs text-gray-500 mb-3">All ledger data and records will be permanently deleted.</p>
+                <button onclick="clearAllData()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg text-sm transition active:scale-95 shadow-md">
+                    <i class="fas fa-trash-alt mr-1"></i> Clear All Data
+                </button>
+                <div id="clearMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2 mt-2"></div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Logout -->
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
@@ -235,6 +291,95 @@
                 msgEl.classList.remove('hidden');
             }
         }
+
+        // ===== Limit Management =====
+        let specLimits = {{ specific_limits_json|safe }};
+
+        function renderSpecLimits() {
+            const el = document.getElementById('specLimitsList');
+            if (!el) return;
+            const entries = Object.entries(specLimits).sort((a,b) => a[0].localeCompare(b[0]));
+            if (!entries.length) { el.innerHTML = '<p class="text-xs text-gray-400 italic">No specific limits set</p>'; return; }
+            el.innerHTML = entries.map(([num, limit]) => `
+                <div class="flex items-center justify-between bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                    <span class="text-sm font-bold text-red-700">${num}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-gray-600">${limit.toLocaleString()}</span>
+                        <button onclick="deleteSpecLimit('${num}')" class="text-red-400 hover:text-red-600 transition p-1">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showLimitMsg(ok, text) {
+            const el = document.getElementById('limitMsg');
+            el.className = 'text-xs font-medium rounded-lg px-3 py-2 ' + (ok ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200');
+            el.textContent = text;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        async function setGlobalLimit() {
+            const val = parseInt(document.getElementById('globalLimitInput').value);
+            if (!val || val <= 0) return showLimitMsg(false, 'Enter a valid limit amount');
+            const fd = new FormData();
+            fd.append('limit', val);
+            const res = await fetch('/api/set_global_limit', { method: 'POST', headers: {'X-CSRFToken': document.getElementById('csrfToken').value}, body: fd });
+            const data = await res.json();
+            if (data.ok) showLimitMsg(true, 'Global limit set to ' + val.toLocaleString());
+            else showLimitMsg(false, data.error || 'Failed');
+        }
+
+        async function setSpecificLimit() {
+            const num = document.getElementById('specNumInput').value.trim();
+            const limit = parseInt(document.getElementById('specLimitInput').value);
+            if (!num || num.length > 2 || !limit || limit <= 0) return showLimitMsg(false, 'Enter number (00-99) and limit');
+            const fd = new FormData();
+            fd.append('num', num.padStart(2, '0'));
+            fd.append('limit', limit);
+            const res = await fetch('/api/set_specific_limit', { method: 'POST', headers: {'X-CSRFToken': document.getElementById('csrfToken').value}, body: fd });
+            const data = await res.json();
+            if (data.ok) {
+                specLimits[num.padStart(2, '0')] = limit;
+                renderSpecLimits();
+                document.getElementById('specNumInput').value = '';
+                document.getElementById('specLimitInput').value = '';
+                showLimitMsg(true, 'Limit set for ' + num.padStart(2, '0'));
+            } else showLimitMsg(false, data.error || 'Failed');
+        }
+
+        async function deleteSpecLimit(num) {
+            const fd = new FormData();
+            fd.append('num', num);
+            const res = await fetch('/api/delete_specific_limit', { method: 'POST', headers: {'X-CSRFToken': document.getElementById('csrfToken').value}, body: fd });
+            const data = await res.json();
+            if (data.ok) {
+                delete specLimits[num];
+                renderSpecLimits();
+                showLimitMsg(true, 'Removed limit for ' + num);
+            }
+        }
+
+        // ===== Clear All Data =====
+        function showClearMsg(ok, text) {
+            const el = document.getElementById('clearMsg');
+            el.className = 'text-xs font-medium rounded-lg px-3 py-2 ' + (ok ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200');
+            el.textContent = text;
+            el.classList.remove('hidden');
+        }
+
+        async function clearAllData() {
+            if (!confirm('Are you sure? All data will be permanently deleted!')) return;
+            const res = await fetch('/api/clear_all', { method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.getElementById('csrfToken').value}, body: '{}' });
+            const data = await res.json();
+            if (data.ok) showClearMsg(true, 'All data cleared successfully!');
+            else showClearMsg(false, data.error || 'Failed');
+        }
+
+        // ===== Init =====
+        renderSpecLimits();
     </script>
 
 </body>

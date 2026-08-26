@@ -552,7 +552,12 @@ def chat_page(request):
 @api_login_required
 def settings_page(request):
     is_owner = request.user.is_authenticated
-    return render(request, 'twodapp/settings.html', {'is_owner': is_owner})
+    state = GameState.get_state()
+    return render(request, 'twodapp/settings.html', {
+        'is_owner': is_owner,
+        'global_limit': state.global_limit or '',
+        'specific_limits_json': json.dumps(dict(state.specific_limits)),
+    })
 
 
 @require_POST
