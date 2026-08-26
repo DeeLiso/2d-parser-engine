@@ -198,6 +198,11 @@
             box-shadow: 0 0 0 2px rgba(239,68,68,0.4);
         }
 
+        .tab-item { color: #6b7280; transition: color 0.15s, transform 0.12s; }
+        .tab-item:active { transform: scale(0.88); }
+        .tab-item.active { color: #4f46e5; }
+        .tab-item.active i { text-shadow: 0 0 8px rgba(79,70,229,0.3); }
+
         .tab-item-sidebar { transition: background-color 0.15s, color 0.15s, transform 0.12s; }
         .tab-item-sidebar:active { transform: scale(0.88); }
         .tab-item-sidebar.active { background-color: #eef2ff; color: #4f46e5; }
@@ -312,6 +317,36 @@
         </a>
     </aside>
 
+    <!-- Mobile Bottom Tab Bar -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] lg:hidden" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
+        <div class="flex items-center justify-around px-1">
+            <a href="/bet/?type=dealer" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="home">
+                <i class="fas fa-home text-[18px]"></i>
+                <span class="leading-none">Home</span>
+            </a>
+            <a href="/records/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="records">
+                <i class="fas fa-list-ol text-[18px]"></i>
+                <span class="leading-none">မှတ်တမ်း</span>
+            </a>
+            <a href="/bet/manage_bettors/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="manage">
+                <i class="fas fa-user-plus text-[18px]"></i>
+                <span class="leading-none">Players</span>
+            </a>
+            <a href="/ledger/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="ledger">
+                <i class="fas fa-th text-[18px]"></i>
+                <span class="leading-none">Ledger</span>
+            </a>
+            <a href="/limit/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="limit">
+                <i class="fas fa-exclamation-triangle text-[18px]"></i>
+                <span class="leading-none">Limit</span>
+            </a>
+            <a href="/chat/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="chat">
+                <i class="fas fa-comments text-[18px]"></i>
+                <span class="leading-none">Chat</span>
+            </a>
+        </div>
+    </div>
+
     <!-- Live Ticker -->
     <div id="tickerBar" class="bg-slate-800 text-emerald-300 overflow-hidden whitespace-nowrap shadow-md">
         <div id="tickerContent" class="inline-block py-2 px-4 text-sm sm:text-base font-bold tracking-wide animate-marquee">
@@ -322,7 +357,7 @@
         </div>
     </div>
 
-    <main class="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 w-full">
+    <main class="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-6 w-full">
         <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 border border-gray-100">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div class="flex flex-wrap items-center gap-2">
@@ -1096,6 +1131,9 @@
             for (const [p, v] of Object.entries(pageMap)) {
                 if (location.pathname === p) { active = v; break; }
             }
+            document.querySelectorAll('.tab-item[data-page]').forEach(el => {
+                if (el.dataset.page === active) el.classList.add('active');
+            });
             document.querySelectorAll('.tab-item-sidebar[data-page]').forEach(el => {
                 if (el.dataset.page === active) el.classList.add('active');
             });
