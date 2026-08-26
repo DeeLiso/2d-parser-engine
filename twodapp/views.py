@@ -550,6 +550,30 @@ def chat_page(request):
 
 
 @api_login_required
+def settings_page(request):
+    is_owner = request.user.is_authenticated
+    return render(request, 'twodapp/settings.html', {'is_owner': is_owner})
+
+
+@require_POST
+@api_login_required
+def api_change_password(request):
+    data = json.loads(request.body)
+    old_password = data.get('old_password', '')
+    new_password = data.get('new_password', '')
+    if not old_password or not new_password:
+        return JsonResponse({'ok': False, 'error': 'Passwords required'})
+    if len(new_password) < 4:
+        return JsonResponse({'ok': False, 'error': 'Password must be at least 4 characters'})
+    user = request.user
+    if not user.check_password(old_password):
+        return JsonResponse({'ok': False, 'error': 'Wrong current password'})
+    user.set_password(new_password)
+    user.save()
+    return JsonResponse({'ok': True})
+
+
+@api_login_required
 def bettor_chat_page(request):
     return render(request, 'twodapp/chat.html', {'chat_role': 'player'})
 

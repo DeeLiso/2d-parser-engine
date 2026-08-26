@@ -146,9 +146,10 @@
         <a href="/chat/" class="tab-item-sidebar w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition" data-page="chat" title="Chat">
             <i class="fas fa-comments text-base"></i>
         </a>
+        <a href="/settings/" class="tab-item-sidebar w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:bg-purple-50 hover:text-purple-600 transition" data-page="settings" title="Settings">
+            <i class="fas fa-cog text-base"></i>
+        </a>
     </aside>
-
-    <!-- Mobile Bottom Tab Bar -->
     <div class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] lg:hidden" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
         <div class="flex items-center justify-around px-1">
             <a href="/bet/?type=dealer" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="home">
@@ -174,6 +175,10 @@
             <a href="/chat/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="chat">
                 <i class="fas fa-comments text-[18px]"></i>
                 <span class="leading-none">Chat</span>
+            </a>
+            <a href="/settings/" class="tab-item flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-[10px] font-bold min-w-0 flex-1" data-page="settings">
+                <i class="fas fa-cog text-[18px]"></i>
+                <span class="leading-none">Settings</span>
             </a>
         </div>
     </div>
@@ -282,7 +287,7 @@
 
         // ===== Active Sidebar Tab =====
         (function() {
-            const pageMap = {'/records/': 'records', '/bet/manage_bettors/': 'manage', '/ledger/': 'ledger', '/limit/': 'limit', '/chat/': 'chat'};
+            const pageMap = {'/records/': 'records', '/bet/manage_bettors/': 'manage', '/ledger/': 'ledger', '/limit/': 'limit', '/chat/': 'chat', '/settings/': 'settings'};
             let active = '';
             for (const [p, v] of Object.entries(pageMap)) {
                 if (location.pathname === p) { active = v; break; }
