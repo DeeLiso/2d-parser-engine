@@ -134,44 +134,6 @@
             animation-play-state: paused;
         }
 
-        /* ===== Hot Save Button Effects ===== */
-        @keyframes savePulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(249, 115, 22, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
-            }
-        }
-
-        .hot-save-btn:active {
-            animation: savePulse 0.4s ease-out;
-        }
-
-        @keyframes saveSuccess {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.08);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .hot-save-btn.saved {
-            background: linear-gradient(to right, #22c55e, #16a34a) !important;
-            animation: saveSuccess 0.3s ease-out;
-        }
-
         /* ===== Over Limit Alerts ===== */
         .over-alert-btn {
             transition: all 0.2s ease;
@@ -452,27 +414,6 @@
                 <label for="viberInput" class="block text-sm font-bold text-gray-700 mb-2">
                     <i class="fab fa-viber text-purple-600 mr-1"></i> Paste Viber Text Here
                 </label>
-
-                {% if user_type != 'bettor' %}
-                <div class="flex flex-wrap items-center gap-2 mb-2">
-                    <div
-                        class="flex items-center flex-1 basis-32 min-w-[110px] border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-orange-500">
-                        <span class="px-2 text-gray-400"><i class="fas fa-fire"></i></span>
-                        <input id="hotNumInput" type="text" placeholder="Hot Number (23,33,44)"
-                            class="w-full p-2 outline-none text-sm font-bold">
-                    </div>
-                    <div
-                        class="flex items-center flex-1 basis-24 min-w-[100px] border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-orange-500">
-                        <span class="px-2 text-gray-400"><i class="fas fa-coins"></i></span>
-                        <input id="hotAmtInput" type="number" placeholder="ငွေပမာဏ"
-                            class="w-full p-2 outline-none text-sm">
-                    </div>
-                    <button id="saveHotBtn"
-                        class="hot-save-btn flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 whitespace-nowrap">
-                        <i class="fas fa-save"></i> Save
-                    </button>
-                </div>
-                {% endif %}
 
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                     <div
@@ -862,30 +803,6 @@
                 parts.push(`ထိုးသူ: ${meta.bettor_name || '—'} · ${meta.bettor_date || '—'}`);
             }
 
-            const hotNumEl = document.getElementById('hotNumInput');
-            const hotAmtEl = document.getElementById('hotAmtInput');
-            if (hotNumEl && hotAmtEl) {
-                const raw = hotNumEl.value.trim();
-                const limit = parseInt(hotAmtEl.value);
-                if (raw && !isNaN(limit) && limit > 0) {
-                    const valid = [];
-                    for (const part of raw.split(/[\s,၊။]+/)) {
-                        const n = parseInt(part);
-                        if (!isNaN(n) && n >= 0 && n <= 99) valid.push(n < 10 ? '0' + n : '' + n);
-                    }
-                    if (valid.length) {
-                        let lastData = null;
-                        for (const num of valid) {
-                            lastData = await post('/api/set_specific_limit', { num, limit });
-                        }
-                        if (lastData && lastData.ok) {
-                            parts.push(`Hot ${valid.length} ခု`);
-                            applyState(lastData);
-                        }
-                    }
-                }
-            }
-
             if (parts.length && statusEl) {
                 statusEl.textContent = 'Saved ✓ ' + parts.join(' · ');
                 statusEl.className = 'text-emerald-600 text-xs font-semibold';
@@ -947,64 +864,6 @@
         }
 
         document.getElementById('btnCalculate').addEventListener('click', () => calculate('add'));
-
-        // ===== Hot Number Save Button =====
-        const saveHotBtnEl = document.getElementById('saveHotBtn');
-        if (saveHotBtnEl) saveHotBtnEl.addEventListener('click', async () => {
-            const btn = document.getElementById('saveHotBtn');
-            const raw = document.getElementById('hotNumInput').value.trim();
-            const limit = parseInt(document.getElementById('hotAmtInput').value);
-            const statusEl = document.getElementById('hotStatus');
-
-            if (!raw || isNaN(limit) || limit <= 0) {
-                statusEl.textContent = 'ဂဏန်း + Limit ထည့်ပါ!';
-                statusEl.className = 'text-red-500 text-xs font-semibold';
-                return;
-            }
-
-            const valid = [];
-            for (const part of raw.split(/[\s,၊။]+/)) {
-                const n = parseInt(part);
-                if (!isNaN(n) && n >= 0 && n <= 99) valid.push(n < 10 ? '0' + n : '' + n);
-            }
-            if (!valid.length) {
-                statusEl.textContent = 'နံပါတ် မမှန်ပါ (00-99)';
-                statusEl.className = 'text-red-500 text-xs font-semibold';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-            let lastData = null;
-            for (const num of valid) {
-                lastData = await post('/api/set_specific_limit', { num, limit });
-            }
-
-            if (lastData && lastData.ok) {
-                btn.classList.add('saved');
-                btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
-                statusEl.textContent = `🔥 ${valid.length} ခု သိမ်းပြီး ✓`;
-                statusEl.className = 'text-emerald-600 text-xs font-semibold';
-                applyState(lastData);
-                document.getElementById('hotNumInput').value = '';
-                document.getElementById('hotAmtInput').value = '';
-                setTimeout(() => {
-                    btn.classList.remove('saved');
-                    btn.innerHTML = '<i class="fas fa-save"></i> Save';
-                    btn.disabled = false;
-                }, 1500);
-                setTimeout(() => { statusEl.textContent = ''; }, 3000);
-            } else {
-                btn.innerHTML = '<i class="fas fa-times"></i> Error';
-                statusEl.textContent = 'သိမ်းမရပါ';
-                statusEl.className = 'text-red-500 text-xs font-semibold';
-                setTimeout(() => {
-                    btn.innerHTML = '<i class="fas fa-save"></i> Save';
-                    btn.disabled = false;
-                }, 1500);
-            }
-        });
 
         // ===== Clean pasted Viber text before it reaches the parser =====
         document.getElementById('viberInput').addEventListener('paste', (e) => {
@@ -1144,12 +1003,6 @@
                 recordsList = [];
                 bettorNameInput.value = '';
                 bettorDateInput.value = '';
-                const hni = document.getElementById('hotNumInput');
-                const hai = document.getElementById('hotAmtInput');
-                const hs = document.getElementById('hotStatus');
-                if (hni) hni.value = '';
-                if (hai) hai.value = '';
-                if (hs) hs.textContent = '';
                 applyState(data);
             }
         });
