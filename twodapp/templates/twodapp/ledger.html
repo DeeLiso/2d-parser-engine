@@ -441,11 +441,18 @@
             const label = kind === 'hot' ? '🔥 Hot Cut-off' : 'ပုံမှန် Cut-off';
             let text = label + '\n';
             items.forEach(c => {
-                text += `${c.numStr} → ${c.amt.toLocaleString()}/${c.limit.toLocaleString()}\n`;
+                text += c.numStr + ' → ' + c.amt.toLocaleString() + '/' + c.limit.toLocaleString() + '\n';
             });
             text += '\n— 2D FPEngine';
-            const url = 'viber://forward?text=' + encodeURIComponent(text);
-            window.open(url, '_blank');
+
+            if (navigator.share) {
+                navigator.share({ text: text }).catch(function() {});
+            } else {
+                var viberUrl = 'viber://forward?text=' + encodeURIComponent(text);
+                var a = document.createElement('a');
+                a.href = viberUrl;
+                a.click();
+            }
         }
 
         // ===== Modal =====
