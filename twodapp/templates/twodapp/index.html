@@ -326,11 +326,6 @@
                         <span class="hidden md:inline text-xs text-indigo-200 font-semibold max-w-[120px] truncate">
                             <i class="fas fa-user-circle mr-1"></i>{{ user.username }}
                         </span>
-                        <div class="hidden sm:flex items-center gap-1 text-[10px] text-indigo-200">
-                            <i class="fas fa-font text-[9px]"></i>
-                            <input type="range" id="fontSizeSlider" min="12" max="24" value="16"
-                                class="w-16 h-1 bg-indigo-400 rounded-lg appearance-none cursor-pointer">
-                        </div>
                         <button type="submit" title="Logout"
                             class="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-100 transition transform hover:scale-105">
                             <i class="fas fa-sign-out-alt text-sm"></i>
@@ -1139,11 +1134,6 @@
         document.getElementById('keypadDelBtn').addEventListener('click', keypadBackspace);
         document.getElementById('keypadOkBtn').addEventListener('click', () => keypadInsert(' '));
         document.getElementById('keypadEnterBtn').addEventListener('click', () => keypadInsert('\n'));
-
-        // ===== Font Size =====
-        document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
-            document.documentElement.style.fontSize = e.target.value + 'px';
-        });
 
         // ===== Clear All =====
         document.getElementById('clearAllBtn').addEventListener('click', async () => {
