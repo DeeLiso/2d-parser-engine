@@ -3,7 +3,7 @@
 <html lang="my" style="font-size: 16px;">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>မှတ်တမ်းစာရင်း (Records)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -375,15 +375,15 @@
                 <button class="period-btn date-btn" data-date="yesterday">
                     <i class="fas fa-history mr-1 text-gray-500"></i>မနေ့က
                 </button>
-                <span class="flex flex-wrap items-center gap-1.5 date-range">
+                <button id="dateRangeToggle" class="period-btn date-btn" type="button">
+                    <i class="fas fa-calendar-alt mr-1 text-indigo-400"></i>Custom
+                </button>
+                <span id="dateRangeWrap" class="hidden flex flex-wrap items-center gap-1.5 date-range w-full sm:w-auto sm:inline-flex">
                     <input type="date" id="dateFrom" title="From Date"
-                           class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                    <span class="text-gray-400 text-xs">→</span>
+                           class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 flex-1 sm:flex-none min-w-0">
+                    <span class="text-gray-400 text-xs shrink-0">→</span>
                     <input type="date" id="dateTo" title="To Date"
-                           class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                    <button class="period-btn date-btn" data-date="custom">
-                        <i class="fas fa-calendar-alt mr-1 text-indigo-400"></i>Custom
-                    </button>
+                           class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 flex-1 sm:flex-none min-w-0">
                 </span>
                 <button id="dateClearBtn" title="နေ့စစ်ထုတ်ခြင်းကို ဖျက်မည်"
                         class="text-xs font-semibold text-gray-400 hover:text-red-500 transition px-1">
@@ -886,6 +886,14 @@
             document.getElementById('dateTo').value = '';
             syncDateUI();
             render();
+        });
+        document.getElementById('dateRangeToggle').addEventListener('click', () => {
+            const wrap = document.getElementById('dateRangeWrap');
+            wrap.classList.toggle('hidden');
+            wrap.classList.toggle('inline-flex');
+            if (!wrap.classList.contains('hidden')) {
+                document.getElementById('dateFrom').focus();
+            }
         });
         syncDateUI();
 
