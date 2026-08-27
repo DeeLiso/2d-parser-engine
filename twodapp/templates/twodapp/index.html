@@ -244,6 +244,10 @@
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-4 shrink-0">
                     <div
+                        class="hidden text-xs sm:text-sm font-medium bg-emerald-500 text-white px-2 sm:px-3 py-1 rounded-full shadow-inner whitespace-nowrap items-center gap-1" id="winDisplay">
+                        <i class="fas fa-trophy mr-1"></i>ပေါက်သီး 0 Ks
+                    </div>
+                    <div
                         class="text-xs sm:text-sm font-medium bg-indigo-500 px-2 sm:px-3 py-1 rounded-full shadow-inner whitespace-nowrap">
                         Total: <span id="navTotalAmt">0</span><span class="hidden sm:inline"> Ks</span>
                     </div>
@@ -572,6 +576,7 @@
             document.getElementById('tickerSet').textContent = tickerData.set;
             document.getElementById('tickerValue').textContent = tickerData.value;
         }
+        const drawNums = { noon: '--', evening: '--' };
         async function fetchLiveData() {
             try {
                 const res = await fetch('/api/live');
@@ -581,6 +586,16 @@
                     tickerData.set = data.set || '--';
                     tickerData.value = data.value || '--';
                     tickerData.time = data.time || '';
+
+                    const results = data.today_results || [];
+                    const noon = results.find((r) => String(r.time).startsWith('12:'));
+                    const evening = results.find((r) => String(r.time).startsWith('16:30'));
+                    const newNoon = noon ? (noon.result || '--') : '--';
+                    const newEvening = evening ? (evening.result || '--') : '--';
+                    const changed = newNoon !== drawNums.noon || newEvening !== drawNums.evening;
+                    drawNums.noon = newNoon;
+                    drawNums.evening = newEvening;
+                    if (changed) updateWinDisplay();
                 }
             } catch (e) {
                 // API unreachable - keep last known values
@@ -605,6 +620,35 @@
         const bettorNameInput = document.getElementById('bettorNameInput');
         const bettorDateInput = document.getElementById('bettorDateInput');
         const RECORDS = {{ logs_json| safe }};
+        const USER_TYPE = "{{ user_type|escapejs }}";
+        const CURRENT_USERNAME = "{{ bettor_username|escapejs }}";
+        const PAYOUT_RATE = 80;
+
+        function updateWinDisplay() {
+            const el = document.getElementById('winDisplay');
+            if (!el) return;
+            const showForBettor = USER_TYPE === 'bettor';
+            let winTotal = 0;
+            let winCount = 0;
+            (typeof recordsList !== 'undefined' && recordsList.length ? recordsList : RECORDS).forEach((r) => {
+                if (r.is_error || r.is_canceled) return;
+                if (showForBettor && r.bettor_username !== CURRENT_USERNAME) return;
+                const t = String(r.time || '');
+                const hour = parseInt(t.slice(11, 13), 10);
+                const isAM = !isNaN(hour) && hour < 12;
+                const winNum = isAM ? drawNums.noon : drawNums.evening;
+                if (winNum && winNum !== '--' && (r.numbers || []).includes(winNum)) {
+                    winTotal += (r.amount || 0) * PAYOUT_RATE;
+                    winCount++;
+                }
+            });
+            if (winCount > 0) {
+                el.classList.remove('hidden');
+                el.innerHTML = `<i class="fas fa-trophy mr-1"></i>ပေါက်သီး ${winTotal.toLocaleString()} Ks`;
+            } else {
+                el.classList.add('hidden');
+            }
+        }
 
         // ===== Over Limit Alerts =====
         let overLimits = {{ over_limits_json| safe }};
@@ -857,6 +901,7 @@
                     if (!l.is_error) recordsList.push(l);
                 });
                 renderRecords();
+                updateWinDisplay();
                 document.getElementById('viberInput').value = '';
                 applyState(data);
             }
@@ -1009,6 +1054,7 @@
         // ===== Init =====
         initLogs();
         initRecords();
+        updateWinDisplay();
 
         // ===== Active Tab Highlight =====
         (function() {
