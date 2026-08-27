@@ -192,6 +192,19 @@
             background-color: #f7f9fa;
         }
 
+        /* ===== Text Caret Overlay ===== */
+        @keyframes caretBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        #caretSpan {
+            animation: caretBlink 1s steps(1) infinite;
+            box-shadow: 0 0 0 1px rgba(99,102,241,0.15);
+        }
+        #caretSpan.on {
+            display: block;
+        }
+
         .text-label {
             color: #a4a8ad;
         }
@@ -423,9 +436,10 @@
 
                 <span id="hotStatus" class="block text-xs font-semibold mb-2"></span>
 
-                <textarea id="viberInput" readonly
-                    class="w-full flex-grow min-h-[250px] lg:min-h-0 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3 border resize-none font-mono text-sm"
-                    placeholder="Examples:
+                <div class="relative flex-grow w-full min-h-[250px] lg:min-h-0 border border-transparent">
+                    <textarea id="viberInput" readonly
+                        class="w-full h-full min-h-[250px] lg:min-h-0 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3 border resize-none font-mono text-sm"
+                        placeholder="Examples:
 5 ပတ် 500 / 5p500
 5 ထိပ် 500 / 5t500
 5 နောက် 500 / 5n500
@@ -434,6 +448,11 @@
 25 R 500 / 02468 ခွေ 500
 2470 ကို 18 နဲ့ ကပ် r 1000
 12 500, 34 200 / 12.14.27 500"></textarea>
+                    <div id="caretMirror" aria-hidden="true"
+                        class="absolute inset-0 overflow-hidden pointer-events-none invisible p-3 font-mono text-sm whitespace-pre-wrap break-words border border-transparent"></div>
+                    <span id="caretSpan"
+                        class="absolute w-[2px] bg-indigo-600 pointer-events-none hidden"></span>
+                </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-1.5 sm:gap-2">
                     <button id="btnCalculate"
@@ -899,6 +918,7 @@
                 renderRecords();
                 updateWinDisplay();
                 document.getElementById('viberInput').value = '';
+                if (typeof updateCaret === 'function') updateCaret();
                 applyState(data);
             }
         }
@@ -915,6 +935,7 @@
             const end = el.selectionEnd;
             el.value = el.value.slice(0, start) + cleaned + el.value.slice(end);
             el.selectionStart = el.selectionEnd = start + cleaned.length;
+            if (typeof updateCaret === 'function') updateCaret();
             if (cleaned !== pasted) logMessage('Pasted text cleaned → standard format ✓', 'info');
         });
 
@@ -924,6 +945,7 @@
             const cleaned = cleanText(el.value);
             if (cleaned !== el.value) {
                 el.value = cleaned;
+                if (typeof updateCaret === 'function') updateCaret();
                 logMessage('Input cleaned → standard format ✓', 'info');
             }
         });
@@ -1004,12 +1026,43 @@
 
         // ===== Keypad (inline, below calculate button) =====
         const keypadTarget = document.getElementById('viberInput');
+        const caretMirror = document.getElementById('caretMirror');
+        const caretSpan = document.getElementById('caretSpan');
+
+        function updateCaret() {
+            if (!caretMirror || !caretSpan) return;
+            const pos = keypadTarget.selectionStart ?? keypadTarget.value.length;
+            const text = keypadTarget.value;
+            if (!text.length) {
+                caretSpan.classList.remove('on');
+                return;
+            }
+            caretMirror.textContent = text.slice(0, pos);
+            const marker = document.createElement('span');
+            marker.id = 'caretMarker';
+            marker.textContent = '\u200b';
+            caretMirror.appendChild(marker);
+            const mr = marker.getBoundingClientRect();
+            const base = caretMirror.getBoundingClientRect();
+            const lineH = parseFloat(getComputedStyle(caretMirror).lineHeight) || 20;
+            let left = mr.left - base.left;
+            let top = mr.top - base.top - keypadTarget.scrollTop;
+            if (mr.height === 0 && pos > 0 && mr.width === 0) {
+                left = 0; top = 0;
+            }
+            caretSpan.style.left = left + 'px';
+            caretSpan.style.top = top + 'px';
+            caretSpan.style.height = lineH + 'px';
+            caretSpan.classList.add('on');
+        }
+
         function keypadInsert(ch) {
             keypadTarget.focus();
             const start = keypadTarget.selectionStart ?? keypadTarget.value.length;
             const end = keypadTarget.selectionEnd ?? keypadTarget.value.length;
             keypadTarget.value = keypadTarget.value.slice(0, start) + ch + keypadTarget.value.slice(end);
             keypadTarget.selectionStart = keypadTarget.selectionEnd = start + ch.length;
+            updateCaret();
         }
         function keypadBackspace() {
             keypadTarget.focus();
@@ -1022,7 +1075,12 @@
                 keypadTarget.value = keypadTarget.value.slice(0, start) + keypadTarget.value.slice(end);
                 keypadTarget.selectionStart = keypadTarget.selectionEnd = start;
             }
+            updateCaret();
         }
+
+        keypadTarget.addEventListener('select', updateCaret);
+        keypadTarget.addEventListener('scroll', updateCaret);
+        window.addEventListener('resize', updateCaret);
 
         document.querySelectorAll('.keypad-num').forEach((btn) => {
             btn.addEventListener('click', () => keypadInsert(btn.dataset.num));
