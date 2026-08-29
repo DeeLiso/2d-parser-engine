@@ -14,6 +14,8 @@
         .row-active { background: white; }
         .row-canceled { background: #f9fafb; opacity: 0.6; }
         .row-error { background: #fef2f2; }
+        .row-pending { background: #fffbeb; opacity: 0.85; }
+        .row-rejected { background: #fef2f2; opacity: 0.6; text-decoration: none; }
         .num-tag { display: inline-block; background: #e0e7ff; color: #3730a3; border-radius: 0.25rem; padding: 0.05rem 0.35rem; font-size: 0.65rem; font-weight: 700; margin: 0.05rem; }
     </style>
 </head>
@@ -114,13 +116,18 @@
                 const cnt = r.count || nums.length || 1;
                 const total = cnt * (r.amount || 0);
                 const canceled = !!r.is_canceled;
-                const rowCls = canceled ? 'row-canceled' : r.is_error ? 'row-error' : 'row-active';
+                const accepted = r.status === 'approved';
+                const pending = r.status === 'pending';
+                const rejected = r.status === 'rejected';
+                const rowCls = rejected ? 'row-rejected' : pending ? 'row-pending' : canceled ? 'row-canceled' : r.is_error ? 'row-error' : 'row-active';
 
                 let status = '<span class="inline-block bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fas fa-check mr-0.5"></i>Active</span>';
                 if (canceled) status = '<span class="inline-block bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full font-bold text-[10px] line-through"><i class="fas fa-ban mr-0.5"></i>Cancel</span>';
                 else if (r.is_error) status = '<span class="inline-block bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fas fa-times mr-0.5"></i>Error</span>';
+                else if (pending) status = '<span class="inline-block bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fas fa-hourglass-half mr-0.5"></i>Pending</span>';
+                else if (rejected) status = '<span class="inline-block bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fas fa-times-circle mr-0.5"></i>Rejected</span>';
 
-                if (!canceled && !r.is_error) { totalSales += total; totalCount += cnt; }
+                if (accepted && !canceled && !r.is_error) { totalSales += total; totalCount += cnt; }
 
                 const numsHtml = nums.map(n => '<span class="num-tag">' + n + '</span>').join('');
 
@@ -136,7 +143,7 @@
                 '</tr>';
 
                 // Mobile card
-                cardsHtml += '<div class="bg-white rounded-xl border border-gray-200 p-3 ' + (canceled ? 'opacity-50' : '') + '">' +
+                cardsHtml += '<div class="bg-white rounded-xl border border-gray-200 p-3 ' + (canceled || rejected ? 'opacity-50' : pending ? 'opacity-85 border-amber-200' : '') + '">' +
                     '<div class="flex items-center justify-between mb-2">' +
                         '<span class="text-xs text-gray-400 font-mono">#' + r.id + '</span>' +
                         status +
@@ -153,7 +160,7 @@
             body.innerHTML = html;
             mobileCards.innerHTML = cardsHtml;
             document.getElementById('sumTotal').textContent = totalSales.toLocaleString() + ' Ks';
-            document.getElementById('sumAmount').textContent = (RECORDS.filter(r => !r.is_canceled && !r.is_error).reduce((a, r) => a + (r.count || 1) * (r.amount || 0), 0)).toLocaleString() + ' Ks';
+            document.getElementById('sumAmount').textContent = (RECORDS.filter(r => r.status === 'approved' && !r.is_canceled && !r.is_error).reduce((a, r) => a + (r.count || 1) * (r.amount || 0), 0)).toLocaleString() + ' Ks';
             document.getElementById('sumCount').textContent = totalCount + ' ခု';
         }
         render();

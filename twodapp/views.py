@@ -88,7 +88,7 @@ def records_page(request):
 def bettor_records_page(request):
     bettor_username = request.session.get('bettor_username', '')
     state = GameState.get_state()
-    logs = OperationLog.objects.filter(bettor_username=bettor_username, status='approved').order_by('-id')[:500] if bettor_username else []
+    logs = OperationLog.objects.filter(bettor_username=bettor_username).order_by('-id')[:500] if bettor_username else []
     records = [_serialize_log(l) for l in logs]
     return render(request, 'twodapp/bettor_records.html', {
         'records_json': json.dumps(records),
