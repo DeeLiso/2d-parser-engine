@@ -1,10 +1,12 @@
 import functools
 import json
 import urllib.request
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -614,18 +616,40 @@ def api_chat_send(request):
 @require_GET
 @api_login_required
 def api_chat_poll(request):
-    after_id = int(request.GET.get('after', 0))
+    after_id_str = request.GET.get('after', '0') or '0'
+    try:
+        after_id = int(after_id_str)
+    except (ValueError, TypeError):
+        after_id = 0
+    last_sync = request.GET.get('sync', '')
     me_type, me_name = chat_identity(request)
     # Update my presence (last seen)
     presence, _ = ChatPresence.objects.get_or_create(user_type=me_type, user_name=me_name)
     presence.last_seen = timezone.now()
 
-    # Mark messages from the other party as read when I poll
-    ChatMessage.objects.exclude(sender_type=me_type).filter(is_read=False).update(is_read=True)
+    # Mark messages from the other party as read when I poll and bump updated_at
+    # so the sender's read-receipt ticks refresh.
+    unread = list(ChatMessage.objects.exclude(sender_type=me_type).filter(is_read=False))
+    if unread:
+        ChatMessage.objects.filter(pk__in=[m.pk for m in unread]).update(
+            is_read=True, updated_at=timezone.now())
 
-    msgs = list(ChatMessage.objects.order_by('id')[:500])
+    # Delta query: new messages (id > after_id) OR messages modified since last_sync.
+    q_conditions = Q(id__gt=after_id)
+    if last_sync:
+        try:
+            ts = datetime.fromisoformat(last_sync.replace('Z', '+00:00'))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            q_conditions |= Q(updated_at__gt=ts)
+        except (ValueError, TypeError):
+            pass
+    msgs = list(ChatMessage.objects.filter(q_conditions).order_by('id')[:300])
+
     data = []
-    by_id = {m.id: m for m in msgs}
+    by_id = {}
+    for m in msgs:
+        by_id[m.id] = m
     for m in msgs:
         reactions = {}
         for r in m.reactions.all():
@@ -672,7 +696,7 @@ def api_chat_poll(request):
         other_online = False
         other_typing = False
 
-    return JsonResponse({'ok': True, 'messages': data, 'presence': {
+    return JsonResponse({'ok': True, 'messages': data, 'server_time': now.isoformat(), 'presence': {
         'online': other_online,
         'typing': other_typing,
         'last_seen': other_presence.last_seen.astimezone(MMT).strftime('%H:%M') if other_presence else None,
@@ -691,6 +715,8 @@ def api_chat_clear(request):
 @require_POST
 @api_login_required
 def api_chat_edit(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'ok': False, 'error': 'Owner only'})
     data = json.loads(request.body)
     msg_id = data.get('id')
     message = (data.get('message') or '').strip()
@@ -705,27 +731,26 @@ def api_chat_edit(request):
         return JsonResponse({'ok': False, 'error': 'Empty message'})
     msg.message = message
     msg.edited_at = timezone.now()
-    msg.save(update_fields=['message', 'edited_at'])
+    msg.updated_at = timezone.now()
+    msg.save(update_fields=['message', 'edited_at', 'updated_at'])
     return JsonResponse({'ok': True})
 
 
 @require_POST
 @api_login_required
 def api_chat_delete(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'ok': False, 'error': 'Owner only'})
     data = json.loads(request.body)
     msg_id = data.get('id')
-    me_type, me_name = chat_identity(request)
     try:
         msg = ChatMessage.objects.get(pk=msg_id)
     except ChatMessage.DoesNotExist:
         return JsonResponse({'ok': False, 'error': 'Not found'})
-    # Owner may delete anything; others only their own
-    can_delete = request.user.is_authenticated or (msg.sender_type == me_type)
-    if not can_delete:
-        return JsonResponse({'ok': False, 'error': 'Not allowed'})
     msg.is_deleted = True
     msg.message = ''
-    msg.save(update_fields=['is_deleted', 'message'])
+    msg.updated_at = timezone.now()
+    msg.save(update_fields=['is_deleted', 'message', 'updated_at'])
     return JsonResponse({'ok': True})
 
 
@@ -754,7 +779,8 @@ def api_chat_pin(request):
     except ChatMessage.DoesNotExist:
         return JsonResponse({'ok': False, 'error': 'Not found'})
     msg.is_pinned = not msg.is_pinned
-    msg.save(update_fields=['is_pinned'])
+    msg.updated_at = timezone.now()
+    msg.save(update_fields=['is_pinned', 'updated_at'])
     return JsonResponse({'ok': True, 'is_pinned': msg.is_pinned})
 
 
@@ -790,6 +816,8 @@ def api_chat_react(request):
         reactions.setdefault(r.emoji, {'count': 0, 'users': []})
         reactions[r.emoji]['count'] += 1
         reactions[r.emoji]['users'].append(f"{r.user_type}:{r.user_name}")
+    msg.updated_at = timezone.now()
+    msg.save(update_fields=['updated_at'])
     return JsonResponse({'ok': True, 'toggled': toggled, 'reactions': reactions})
 
 
@@ -815,3 +843,21 @@ def api_chat_upload_photo(request):
     )
     photo_url = msg.photo.url
     return JsonResponse({'ok': True, 'photo_url': photo_url, 'msg_id': msg.id})
+
+
+@require_POST
+@api_login_required
+def api_chat_upload_audio(request):
+    audio = request.FILES.get('audio')
+    if not audio:
+        return JsonResponse({'ok': False, 'error': 'No audio'})
+    if audio.size > 10 * 1024 * 1024:
+        return JsonResponse({'ok': False, 'error': 'Max 10MB'})
+    if not audio.content_type.startswith('audio/'):
+        return JsonResponse({'ok': False, 'error': 'Audio only'})
+    sender_type, sender_name = chat_identity(request)
+    msg = ChatMessage.objects.create(
+        sender_type=sender_type, sender_name=sender_name,
+        message='', audio=audio
+    )
+    return JsonResponse({'ok': True, 'audio_url': msg.audio.url, 'msg_id': msg.id})
