@@ -907,6 +907,22 @@
                 bettor_date: bettorDateInput.value
             });
             if (data.ok) {
+                if (data.needs_approval) {
+                    (data.logs || []).forEach((l) => {
+                        if (l.is_error) {
+                            logMessage(l.original, 'error');
+                        } else {
+                            logMessage(`Added (pending): [${l.formula}] ${l.count} numbers x ${l.amount} Ks`, 'info');
+                        }
+                    });
+                    logMessage('စာရင်းကို admin ထံ ပို့လိုက်ပါပြီ — လက်ခံ (approve) ပြီးမှ စာရင်းထဲ ရောက်ပါမည်', 'success');
+                    renderRecords();
+                    updateWinDisplay();
+                    document.getElementById('viberInput').value = '';
+                    if (typeof updateCaret === 'function') updateCaret();
+                    applyState(data);
+                    return;
+                }
                 (data.logs || []).forEach((l) => {
                     if (l.is_error) {
                         logMessage(l.original, 'error');
@@ -1107,6 +1123,52 @@
                 applyState(data);
             }
         });
+
+        // ===== Player Approval Notifications =====
+        function showToast(msg, ok) {
+            let t = document.getElementById('approvalToast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'approvalToast';
+                t.className = 'fixed left-1/2 -translate-x-1/2 bottom-24 z-[250] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-2xl transition-opacity duration-200 opacity-0 pointer-events-none flex items-center gap-2';
+                document.body.appendChild(t);
+            }
+            t.textContent = '';
+            const icon = document.createElement('i');
+            icon.className = 'fas ' + (ok ? 'fa-check-circle' : 'fa-times-circle');
+            t.appendChild(icon);
+            t.appendChild(document.createTextNode(' ' + msg));
+            t.style.background = ok ? 'linear-gradient(135deg,#059669,#10b981)' : 'linear-gradient(135deg,#dc2626,#ef4444)';
+            t.style.opacity = '1';
+            clearTimeout(t._t);
+            t._t = setTimeout(() => { t.style.opacity = '0'; }, 5000);
+        }
+
+        if (USER_TYPE === 'bettor' && CURRENT_USERNAME) {
+            let lastNotifId = 0;
+            async function pollNotifications() {
+                try {
+                    const res = await fetch('/api/player_notifications?after=' + lastNotifId, { headers: { 'X-CSRFToken': CSRF } });
+                    const data = await res.json();
+                    if (!data.ok) return;
+                    let gotNew = false;
+                    for (const n of data.notifications || []) {
+                        if (n.id > lastNotifId) {
+                            lastNotifId = n.id;
+                            gotNew = true;
+                            showToast(n.message || (n.kind === 'approved' ? 'admin မှ စာရင်းကို လက်ခံရရှိပါသည်' : 'admin မှ စာရင်းကို ပယ်ချထားပါသည်'), n.kind === 'approved');
+                        }
+                    }
+                    if (gotNew) {
+                        setTimeout(() => location.reload(), 3500);
+                    }
+                } catch (e) {
+                    // ignore transient errors
+                }
+            }
+            pollNotifications();
+            setInterval(pollNotifications, 5000);
+        }
 
         // ===== Init =====
         initLogs();

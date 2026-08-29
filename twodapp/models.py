@@ -77,6 +77,8 @@ class OperationLog(models.Model):
     bettor_name = models.CharField(max_length=100, blank=True, default='')
     bettor_date = models.CharField(max_length=10, blank=True, default='')
     bettor_username = models.CharField(max_length=50, blank=True, default='')
+    status = models.CharField(max_length=10, default='approved')  # approved / pending / rejected
+    group_id = models.CharField(max_length=40, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -116,6 +118,17 @@ class ChatReaction(models.Model):
     emoji = models.CharField(max_length=10)
     user_type = models.CharField(max_length=10)  # 'owner' or 'player'
     user_name = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+
+class PlayerNotification(models.Model):
+    bettor_username = models.CharField(max_length=50)
+    kind = models.CharField(max_length=20)  # 'approved' / 'rejected'
+    message = models.CharField(max_length=255, blank=True, default='')
+    group_id = models.CharField(max_length=40, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
