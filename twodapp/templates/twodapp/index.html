@@ -1145,7 +1145,9 @@
         }
 
         if (USER_TYPE === 'bettor' && CURRENT_USERNAME) {
-            let lastNotifId = 0;
+            const notifKey = 'twod_last_notif_' + CURRENT_USERNAME;
+            let lastNotifId = parseInt(localStorage.getItem(notifKey) || '0', 10) || 0;
+            let showNotify = true;
             async function pollNotifications() {
                 try {
                     const res = await fetch('/api/player_notifications?after=' + lastNotifId, { headers: { 'X-CSRFToken': CSRF } });
@@ -1155,12 +1157,16 @@
                     for (const n of data.notifications || []) {
                         if (n.id > lastNotifId) {
                             lastNotifId = n.id;
+                            localStorage.setItem(notifKey, String(lastNotifId));
                             gotNew = true;
-                            showToast(n.message || (n.kind === 'approved' ? 'admin မှ စာရင်းကို လက်ခံရရှိပါသည်' : 'admin မှ စာရင်းကို ပယ်ချထားပါသည်'), n.kind === 'approved');
+                            if (showNotify) showToast(n.message || (n.kind === 'approved' ? 'admin မှ စာရင်းကို လက်ခံရရှိပါသည်' : 'admin မှ စာရင်းကို ပယ်ချထားပါသည်'), n.kind === 'approved');
                         }
                     }
                     if (gotNew) {
-                        setTimeout(() => location.reload(), 3500);
+                        if (showNotify) {
+                            showNotify = false;
+                            setTimeout(() => location.reload(), 3500);
+                        }
                     }
                 } catch (e) {
                     // ignore transient errors
