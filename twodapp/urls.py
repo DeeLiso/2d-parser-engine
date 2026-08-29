@@ -44,6 +44,9 @@ urlpatterns = [
     path('api/chat/pin', views.api_chat_pin, name='api_chat_pin'),
     path('api/chat/react', views.api_chat_react, name='api_chat_react'),
     path('api/chat/upload_photo', views.api_chat_upload_photo, name='api_chat_upload_photo'),
+    path('api/chat/edit', views.api_chat_edit, name='api_chat_edit'),
+    path('api/chat/delete', views.api_chat_delete, name='api_chat_delete'),
+    path('api/chat/typing', views.api_chat_typing, name='api_chat_typing'),
     path('api/change_password', views.api_change_password, name='api_change_password'),
 ]
 

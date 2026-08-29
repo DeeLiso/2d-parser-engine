@@ -88,11 +88,26 @@ class ChatMessage(models.Model):
     sender_name = models.CharField(max_length=50)
     message = models.TextField(blank=True, default='')
     photo = models.ImageField(upload_to='chat_photos/', blank=True, null=True)
+    audio = models.FileField(upload_to='chat_voice/', blank=True, null=True)
     is_pinned = models.BooleanField(default=False)
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+    is_deleted = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['id']
+
+
+class ChatPresence(models.Model):
+    user_type = models.CharField(max_length=10)  # 'owner' or 'player'
+    user_name = models.CharField(max_length=50)
+    last_seen = models.DateTimeField(auto_now=True)
+    is_typing = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = [('user_type', 'user_name')]
 
 
 class ChatReaction(models.Model):
