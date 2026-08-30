@@ -160,7 +160,7 @@
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-semibold text-gray-600 mb-2"><i class="fas fa-percentage text-emerald-500 mr-1"></i>အဆ (Payout Rate)</label>
                     <div id="bmMultiplierWrap" class="mp-wrap flex items-center gap-2.5 flex-wrap"></div>
-                    <div class="text-[10px] text-gray-400 mt-1.5">Player အနိုင်ပေးတဲ့အခါ သုံးမယ့် အဆ ကို ရွေးပါ (10X အလွတ်)</div>
+                    <div class="text-[10px] text-gray-400 mt-1.5">Player အနိုင်ပေးတဲ့အခါ သုံးမယ့် အဆ (ရာခိုင်နှုန်း) ကို ရွေးပါ (10% အလွတ်)</div>
                 </div>
             </div>
             <div id="bmError" class="text-red-500 text-xs font-semibold mt-2 hidden"></div>
@@ -229,7 +229,7 @@
     <script>
         const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        const MULTIPLIER_OPTIONS = [10, 11, 12, 13, 14];
+        const MULTIPLIER_OPTIONS = [10, 11, 12, 13, 14, 15];
         let bmMultiplier = 10;
         let editMultiplier = 10;
 
@@ -237,7 +237,7 @@
             const wrap = document.getElementById(wrapId);
             if (!wrap) return;
             wrap.innerHTML = MULTIPLIER_OPTIONS.map(v => `
-                <button type="button" data-mp="${v}" class="mp-circle ${v === current ? 'active' : ''}">${v}X</button>
+                <button type="button" data-mp="${v}" class="mp-circle ${v === current ? 'active' : ''}">${v}%</button>
             `).join('');
             wrap.querySelectorAll('.mp-circle').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -311,7 +311,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 mt-1.5 ml-12 flex-wrap">
-                            <span class="info-badge bg-emerald-100 text-emerald-700"><i class="fas fa-percentage"></i> ${a.multiplier || 10}X</span>
+                            <span class="info-badge bg-emerald-100 text-emerald-700"><i class="fas fa-percentage"></i> ${a.multiplier || 10}%</span>
                             <span class="info-badge bg-blue-100 text-blue-700"><i class="fas fa-globe"></i> ${ua.browser}</span>
                             ${ua.os ? `<span class="info-badge bg-purple-100 text-purple-700"><i class="fas fa-mobile-alt"></i> ${ua.os}</span>` : ''}
                             ${a.last_ip ? `<span class="info-badge bg-gray-100 text-gray-600"><i class="fas fa-map-marker-alt"></i> ${a.last_ip}</span>` : ''}
