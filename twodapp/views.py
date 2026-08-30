@@ -607,13 +607,16 @@ def api_create_bettor(request):
     phone = (data.get('phone') or '').strip()
     balance = int(data.get('balance') or 0)
     hot_limits = data.get('hot_limits') or {}
+    multiplier = int(data.get('multiplier') or 10)
+    if multiplier < 1:
+        multiplier = 10
 
     if not username or not password:
         return JsonResponse({'ok': False, 'error': 'Username + password required'})
     if BettorAccount.objects.filter(username=username).exists():
         return JsonResponse({'ok': False, 'error': f'"{username}" already exists'})
 
-    acc = BettorAccount(username=username, phone=phone, balance=balance, hot_limits=hot_limits)
+    acc = BettorAccount(username=username, phone=phone, balance=balance, hot_limits=hot_limits, multiplier=multiplier)
     acc.set_password(password)
     acc.save()
     return JsonResponse({'ok': True, 'account': acc.to_dict()})
@@ -623,7 +626,7 @@ def api_create_bettor(request):
 @require_GET
 def api_list_bettors(request):
     accs = list(BettorAccount.objects.all().order_by('-id').values(
-        'id', 'username', 'phone', 'balance', 'hot_limits', 'is_active',
+        'id', 'username', 'phone', 'balance', 'hot_limits', 'multiplier', 'is_active',
         'last_user_agent', 'last_ip', 'last_seen'
     ))
     for a in accs:
@@ -656,6 +659,9 @@ def api_edit_bettor(request):
         acc.balance = int(data['balance'] or 0)
     if 'hot_limits' in data:
         acc.hot_limits = data['hot_limits'] or {}
+    if 'multiplier' in data:
+        m = int(data['multiplier'] or 10)
+        acc.multiplier = m if m >= 1 else 10
     password = (data.get('password') or '').strip()
     if password:
         acc.set_password(password)

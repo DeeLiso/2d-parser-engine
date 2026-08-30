@@ -39,6 +39,7 @@ class BettorAccount(models.Model):
     phone = models.CharField(max_length=20, blank=True, default='')
     balance = models.IntegerField(default=0)
     hot_limits = models.JSONField(default=dict)  # e.g. {'23': 5000, '44': 3000}
+    multiplier = models.IntegerField(default=10)  # payout rate per player (10X-14X)
     is_active = models.BooleanField(default=True)
     last_user_agent = models.CharField(max_length=300, blank=True, default='')
     last_ip = models.CharField(max_length=50, blank=True, default='')
@@ -59,6 +60,7 @@ class BettorAccount(models.Model):
             'phone': self.phone,
             'balance': self.balance,
             'hot_limits': self.hot_limits,
+            'multiplier': self.multiplier,
             'is_active': self.is_active,
             'last_user_agent': self.last_user_agent,
             'last_ip': self.last_ip,
