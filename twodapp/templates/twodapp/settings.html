@@ -255,20 +255,6 @@
                     </div>
                 </div>
 
-                <!-- Specific Limits -->
-                <div>
-                    <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Specific Number Limit</label>
-                    <div class="flex gap-2">
-                        <input id="specNumInput" type="number" min="0" max="99" placeholder="00-99"
-                            class="w-20 px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
-                        <input id="specLimitInput" type="number" min="0" placeholder="Limit amount"
-                            class="flex-1 px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
-                        <button onclick="setSpecificLimit()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-lg transition active:scale-95 whitespace-nowrap">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Active Specific Limits -->
                 <div id="specLimitsList" class="space-y-1"></div>
 
@@ -393,24 +379,6 @@
             const data = await res.json();
             if (data.ok) showLimitMsg(true, 'Global limit set to ' + val.toLocaleString());
             else showLimitMsg(false, data.error || 'Failed');
-        }
-
-        async function setSpecificLimit() {
-            const num = document.getElementById('specNumInput').value.trim();
-            const limit = parseInt(document.getElementById('specLimitInput').value);
-            if (!num || num.length > 2 || !limit || limit <= 0) return showLimitMsg(false, 'Enter number (00-99) and limit');
-            const fd = new FormData();
-            fd.append('num', num.padStart(2, '0'));
-            fd.append('limit', limit);
-            const res = await fetch('/api/set_specific_limit', { method: 'POST', headers: {'X-CSRFToken': document.getElementById('csrfToken').value}, body: fd });
-            const data = await res.json();
-            if (data.ok) {
-                specLimits[num.padStart(2, '0')] = limit;
-                renderSpecLimits();
-                document.getElementById('specNumInput').value = '';
-                document.getElementById('specLimitInput').value = '';
-                showLimitMsg(true, 'Limit set for ' + num.padStart(2, '0'));
-            } else showLimitMsg(false, data.error || 'Failed');
         }
 
         async function deleteSpecLimit(num) {
