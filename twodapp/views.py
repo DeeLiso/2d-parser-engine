@@ -2,7 +2,6 @@ import functools
 import json
 import urllib.request
 from datetime import datetime
-from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import logout
@@ -14,7 +13,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import GameState, OperationLog, BettorAccount, ChatMessage, ChatPresence, ChatReaction, PlayerNotification
+from .models import GameState, OperationLog, BettorAccount, ChatMessage, ChatPresence, ChatReaction
 from .parser import parse_text
 
 MMT = ZoneInfo('Asia/Yangon')
@@ -51,15 +50,13 @@ def _serialize_log(log):
         'bettor_name': log.bettor_name,
         'bettor_date': log.bettor_date,
         'bettor_username': log.bettor_username,
-        'status': log.status,
-        'group_id': log.group_id,
         'time': log.created_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
     }
 
 
 def over_limit_items(state):
     bettors_by_num = {}
-    for name, nums in OperationLog.objects.filter(status='approved').exclude(bettor_name='').values_list('bettor_name', 'numbers'):
+    for name, nums in OperationLog.objects.exclude(bettor_name='').values_list('bettor_name', 'numbers'):
         for n in nums or []:
             bettors_by_num.setdefault(n, set()).add(name)
     items = []
@@ -77,7 +74,7 @@ def over_limit_items(state):
 @login_required
 def records_page(request):
     state = GameState.get_state()
-    records = [_serialize_log(l) for l in OperationLog.objects.filter(status='approved').order_by('-id')[:1000]]
+    records = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:1000]]
     return render(request, 'twodapp/records.html', {
         'records_json': json.dumps(records),
         'count': len(records),
@@ -104,7 +101,7 @@ def limit_page(request):
     over = over_limit_items(state)
     over_map = {o['num']: o for o in over}
     logs = []
-    for l in OperationLog.objects.filter(status='approved').order_by('-id')[:2000]:
+    for l in OperationLog.objects.order_by('-id')[:2000]:
         if l.is_error:
             continue
         hit = [n for n in (l.numbers or []) if n in over_map]
@@ -164,7 +161,7 @@ def home_page(request):
 
 def index(request):
     state = GameState.get_state()
-    records = [_serialize_log(l) for l in OperationLog.objects.filter(status='approved').order_by('-id')[:200]]
+    records = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:200]]
     user_type = request.GET.get('type', 'dealer')
     return render(request, 'twodapp/index.html', {
         'ledger_json': json.dumps(state.ledger),
@@ -223,33 +220,9 @@ def api_parse(request):
     bettor_name = request.POST.get('bettor_name', '').strip()
     bettor_date = request.POST.get('bettor_date', '').strip()
     bettor_username = request.session.get('bettor_username', '')
-    is_player = bool(bettor_username)
     state = GameState.get_state()
     parsed, errors = parse_text(text)
     log_entries = []
-
-    # Player submissions enter a pending queue and do NOT update the ledger
-    # until the admin approves them. Admin/dealer entries apply immediately.
-    if is_player:
-        group_id = uuid4().hex
-        for r in parsed:
-            log = OperationLog.objects.create(
-                formula=r['formula'], original=r['original'],
-                numbers=r['numbers'], count=r['count'], amount=r['amount'],
-                bettor_name=bettor_name, bettor_date=bettor_date,
-                bettor_username=bettor_username,
-                status='pending', group_id=group_id,
-            )
-            log_entries.append(_serialize_log(log))
-        for err in errors:
-            log = OperationLog.objects.create(original=err, is_error=True)
-            log_entries.append(_serialize_log(log))
-        return JsonResponse({
-            'ok': True,
-            'logs': log_entries,
-            'needs_approval': True,
-            **state_payload(state),
-        })
 
     ledger = list(state.ledger)
     for r in parsed:
@@ -268,7 +241,6 @@ def api_parse(request):
             numbers=r['numbers'], count=r['count'], amount=r['amount'],
             bettor_name=bettor_name, bettor_date=bettor_date,
             bettor_username=bettor_username,
-            status='approved',
         )
         log_entries.append(_serialize_log(log))
 
@@ -278,137 +250,7 @@ def api_parse(request):
 
     state.ledger = ledger
     state.save()
-    return JsonResponse({'ok': True, 'logs': log_entries, 'needs_approval': False, **state_payload(state)})
-
-
-def _group_pending():
-    """Return a list of pending submissions (grouped by group_id), newest first."""
-    pending = OperationLog.objects.filter(status='pending').order_by('-id')
-    groups = {}
-    order = []
-    for log in pending:
-        if log.group_id not in groups:
-            groups[log.group_id] = {'lines': [], 'total': 0, 'count': 0, 'time': ''}
-            order.append(log.group_id)
-        g = groups[log.group_id]
-        g['lines'].append(_serialize_log(log))
-        g['count'] += 1
-        try:
-            g['total'] += (log.count or 1) * (log.amount or 0)
-        except (TypeError, ValueError):
-            pass
-        if not g['time']:
-            g['time'] = _serialize_log(log)['time']
-    result = []
-    for gid in order:
-        g = groups[gid]
-        result.append({
-            'group_id': gid,
-            'bettor_name': g['lines'][0].get('bettor_name') or g['lines'][0].get('bettor_username') or '',
-            'bettor_username': g['lines'][0].get('bettor_username', ''),
-            'time': g['time'],
-            'lines': g['lines'],
-            'total': g['total'],
-            'count': g['count'],
-        })
-    return result
-
-
-@require_GET
-@login_required
-def api_pending_submissions(request):
-    """Admin: list pending player submissions and whether any await approval."""
-    pending = _group_pending()
-    return JsonResponse({'ok': True, 'pending': pending})
-
-
-def _apply_group(state, logs, subtract=False):
-    """Apply a group's ledger effect. Returns number of valid lines applied."""
-    ledger = list(state.ledger)
-    lines = 0
-    for log in logs:
-        if log.is_error:
-            continue
-        lines += 1
-        for num in log.numbers or []:
-            try:
-                idx = int(num)
-            except (ValueError, TypeError):
-                continue
-            if 0 <= idx < 100:
-                amt = log.amount or 0
-                if subtract:
-                    ledger[idx] = max(0, ledger[idx] - amt)
-                    state.total_amount = max(0, state.total_amount - amt)
-                else:
-                    ledger[idx] += amt
-                    state.total_amount += amt
-    state.ledger = ledger
-    state.valid_lines = max(0, state.valid_lines + lines)
-    state.save()
-    return lines
-
-
-@require_POST
-@login_required
-def api_approve_submission(request):
-    data = json.loads(request.body)
-    group_id = data.get('group_id', '')
-    logs = list(OperationLog.objects.filter(group_id=group_id, status='pending'))
-    if not logs:
-        return JsonResponse({'ok': False, 'error': 'Pending submission not found'})
-    if not request.user.is_authenticated:
-        return JsonResponse({'ok': False, 'error': 'Owner only'})
-    state = GameState.get_state()
-    _apply_group(state, logs, subtract=False)
-    OperationLog.objects.filter(group_id=group_id, status='pending').update(status='approved')
-    notif_user = logs[0].bettor_username or ''
-    if notif_user:
-        PlayerNotification.objects.create(
-            bettor_username=notif_user, kind='approved', group_id=group_id,
-            message='admin မှ စာရင်းကို လက်ခံရရှိပါသည်',
-        )
-    return JsonResponse({'ok': True, **state_payload(state)})
-
-
-@require_POST
-@login_required
-def api_reject_submission(request):
-    data = json.loads(request.body)
-    group_id = data.get('group_id', '')
-    logs = list(OperationLog.objects.filter(group_id=group_id, status='pending'))
-    if not logs:
-        return JsonResponse({'ok': False, 'error': 'Pending submission not found'})
-    if not request.user.is_authenticated:
-        return JsonResponse({'ok': False, 'error': 'Owner only'})
-    OperationLog.objects.filter(group_id=group_id, status='pending').update(status='rejected')
-    notif_user = logs[0].bettor_username or ''
-    if notif_user:
-        PlayerNotification.objects.create(
-            bettor_username=notif_user, kind='rejected', group_id=group_id,
-            message='admin မှ စာရင်းကို ပယ်ချထားပါသည်',
-        )
-    return JsonResponse({'ok': True})
-
-
-@require_GET
-@api_login_required
-def api_player_notifications(request):
-    """Player: return new approve/reject notifications since the given id."""
-    after = request.GET.get('after', '0') or '0'
-    try:
-        after = int(after)
-    except (ValueError, TypeError):
-        after = 0
-    bettor_username = request.session.get('bettor_username', '')
-    notifs = list(PlayerNotification.objects.filter(
-        id__gt=after, bettor_username=bettor_username).order_by('id')[:50])
-    data = [
-        {'id': n.id, 'kind': n.kind, 'message': n.message, 'group_id': n.group_id,
-         'time': n.created_at.astimezone(MMT).strftime('%H:%M')}
-        for n in notifs
-    ]
-    return JsonResponse({'ok': True, 'notifications': data})
+    return JsonResponse({'ok': True, 'logs': log_entries, **state_payload(state)})
 
 
 @require_POST

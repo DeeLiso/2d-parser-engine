@@ -388,23 +388,6 @@
                 </div>
             </div>
 
-            <!-- Pending Approvals (player submissions awaiting admin approval) -->
-            <div id="pendingWrap" class="hidden mb-4 rounded-xl border-2 border-amber-400 bg-amber-50 overflow-hidden">
-                <button id="pendingToggle" type="button" class="w-full flex items-center justify-between gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white px-4 py-2.5">
-                    <span class="flex items-center gap-2 font-bold text-sm bg-white/20 rounded-lg px-2.5 py-1">
-                        <i class="fas fa-bell animate-pulse"></i>
-                        <span>Player မှ စာရင်းတင်ထားပါသည်</span>
-                    </span>
-                    <span class="flex items-center gap-2">
-                        <span id="pendingCount" class="bg-white text-amber-700 font-extrabold text-sm px-2.5 py-0.5 rounded-full">0</span>
-                        <i class="fas fa-chevron-down" id="pendingChevron"></i>
-                    </span>
-                </button>
-                <div id="pendingPanel" class="hidden divide-y divide-amber-200 max-h-96 overflow-y-auto">
-                    <!-- pending submission cards injected by JS -->
-                </div>
-            </div>
-
             <!-- Chip Filters: quick row -->
             <div class="flex items-center gap-2 mb-3 overflow-x-auto -mx-1 px-1 pb-1">
                 <button class="chip-filter active shrink-0" data-date="all"><i class="fas fa-list mr-1"></i>အားလုံး</button>
@@ -1078,101 +1061,6 @@
             });
             return res.json();
         }
-
-        // ===== Pending Approvals (admin workflow) =====
-        const pendingWrap = document.getElementById('pendingWrap');
-        const pendingPanel = document.getElementById('pendingPanel');
-        const pendingCountEl = document.getElementById('pendingCount');
-        let pendingOpen = false;
-
-        function renderPending(groups) {
-            pendingCountEl.textContent = groups.length;
-            pendingWrap.classList.toggle('hidden', groups.length === 0);
-            pendingPanel.innerHTML = groups.map((g) => {
-                const rows = (g.lines || []).filter((l) => !l.is_error).map((l) => {
-                    const nums = (l.numbers || []).join(', ');
-                    return `
-                        <div class="flex items-center justify-between gap-2 py-1">
-                            <span class="text-xs text-gray-700 font-medium break-words">
-                                <span class="font-bold text-gray-800">${nums}</span>
-                                <span class="inline-block bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded mx-1">${l.formula}</span>
-                                @ ${(l.amount || 0).toLocaleString()} Ks
-                            </span>
-                            <span class="font-bold text-gray-800">${(((l.count || 1) * (l.amount || 0))).toLocaleString()} Ks</span>
-                        </div>
-                    `;
-                }).join('');
-                return `
-                    <div class="p-3 flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><i class="fas fa-user"></i></span>
-                                <div class="min-w-0">
-                                    <div class="font-bold text-gray-800 truncate">${g.bettor_name || '—'}</div>
-                                    <div class="text-[10px] text-gray-400 font-mono">${g.time} · ${g.count} lines</div>
-                                </div>
-                            </div>
-                            <span class="font-extrabold text-amber-700 whitespace-nowrap">${g.total.toLocaleString()} Ks</span>
-                        </div>
-                        <div class="rounded-lg bg-amber-50 border border-amber-200 p-2 flex flex-col">${rows}</div>
-                        <div class="flex items-center gap-2">
-                            <button type="button" data-approve="${g.group_id}" class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition active:scale-95">
-                                <i class="fas fa-check"></i> Approve
-                            </button>
-                            <button type="button" data-reject="${g.group_id}" class="flex-1 flex items-center justify-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 rounded-lg transition active:scale-95">
-                                <i class="fas fa-times"></i> Reject
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('') || '<div class="p-4 text-center text-sm text-gray-400">စာရင်းမရှိသေးပါ</div>';
-        }
-
-        async function fetchPending() {
-            try {
-                const res = await fetch('/api/pending_submissions', { headers: { 'X-CSRFToken': CSRF } });
-                const data = await res.json();
-                if (!data.ok) return;
-                renderPending(data.pending || []);
-            } catch (e) {
-                // ignore transient errors
-            }
-        }
-
-        async function decideSubmission(gid, decide) {
-            if (!confirm(decide === 'approve'
-                ? 'ဤ player ၏ စာရင်းကို လက်ခံ (Approve) မည်လား?'
-                : 'ဤ player ၏ စာရင်းကို ပယ်ချ (Reject) မည်လား?')) return;
-            try {
-                const res = await fetch(decide === 'approve' ? '/api/approve_submission' : '/api/reject_submission', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ group_id: gid })
-                });
-                const data = await res.json();
-                if (data.ok) {
-                    location.reload();
-                } else {
-                    alert(data.error || 'Action failed');
-                }
-            } catch (e) {
-                alert('Error: ' + e);
-            }
-        }
-
-        document.addEventListener('click', (e) => {
-            const app = e.target.closest('[data-approve]');
-            const rj = e.target.closest('[data-reject]');
-            if (app) decideSubmission(app.getAttribute('data-approve'), 'approve');
-            else if (rj) decideSubmission(rj.getAttribute('data-reject'), 'reject');
-        });
-        document.getElementById('pendingToggle').addEventListener('click', () => {
-            pendingOpen = !pendingOpen;
-            pendingPanel.classList.toggle('hidden', !pendingOpen);
-            document.getElementById('pendingChevron').classList.toggle('fa-chevron-up', pendingOpen);
-        });
-        fetchPending();
-        setInterval(fetchPending, 5000);
 
         // ===== Record ⋮ More button + Bottom Sheet =====
         const actionSheet = document.getElementById('actionSheet');
