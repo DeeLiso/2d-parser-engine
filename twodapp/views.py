@@ -6,7 +6,8 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -669,6 +670,127 @@ def bettor_login_page(request):
 @login_required
 def manage_bettors_page(request):
     return render(request, 'twodapp/manage_bettors.html')
+
+
+# ===== Operator Panel (Owner accounts + Player accounts) =====
+# Owner-account management is restricted to superusers only.
+
+def _operator_serialize(u):
+    return {
+        'id': u.pk,
+        'username': u.username,
+        'email': u.email,
+        'first_name': u.first_name,
+        'last_name': u.last_name,
+        'is_superuser': u.is_superuser,
+        'is_staff': u.is_staff,
+        'is_active': u.is_active,
+        'last_login': u.last_login.strftime('%Y-%m-%d %H:%M') if u.last_login else '',
+        'date_joined': u.date_joined.strftime('%Y-%m-%d') if u.date_joined else '',
+    }
+
+
+@user_passes_test(lambda u: u.is_authenticated and u.is_superuser)
+def operator_panel_page(request):
+    return render(request, 'twodapp/operator.html')
+
+
+@user_passes_test(lambda u: u.is_authenticated and u.is_superuser)
+@require_GET
+def api_list_operators(request):
+    users = [_operator_serialize(u) for u in User.objects.all().order_by('-is_superuser', '-is_staff', 'username')]
+    return JsonResponse({'ok': True, 'operators': users})
+
+
+@user_passes_test(lambda u: u.is_authenticated and u.is_superuser)
+@require_POST
+def api_create_operator(request):
+    data = json.loads(request.body)
+    username = (data.get('username') or '').strip()
+    password = (data.get('password') or '').strip()
+    email = (data.get('email') or '').strip()
+    first_name = (data.get('first_name') or '').strip()
+    last_name = (data.get('last_name') or '').strip()
+    is_staff = bool(data.get('is_staff'))
+    is_superuser = bool(data.get('is_superuser'))
+    if not username or not password:
+        return JsonResponse({'ok': False, 'error': 'Username + password required'})
+    if User.objects.filter(username__iexact=username).exists():
+        return JsonResponse({'ok': False, 'error': f'"{username}" already exists'})
+    if User.objects.filter(email__iexact=email).exists() and email:
+        return JsonResponse({'ok': False, 'error': f'Email "{email}" already used'})
+    user = User.objects.create_user(
+        username=username, password=password, email=email,
+        first_name=first_name, last_name=last_name,
+        is_staff=is_staff, is_superuser=is_superuser, is_active=True,
+    )
+    return JsonResponse({'ok': True, 'operator': _operator_serialize(user)})
+
+
+@user_passes_test(lambda u: u.is_authenticated and u.is_superuser)
+@require_POST
+def api_edit_operator(request):
+    data = json.loads(request.body)
+    uid = data.get('id')
+    try:
+        user = User.objects.get(id=uid)
+    except User.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Owner account not found'})
+    # Do not allow a superuser to demote/disable themselves (lockout guard).
+    if user.pk == request.user.pk:
+        is_superuser = user.is_superuser
+        is_staff = user.is_staff
+        is_active = user.is_active
+    else:
+        is_superuser = bool(data.get('is_superuser', user.is_superuser))
+        is_staff = bool(data.get('is_staff', user.is_staff))
+        is_active = bool(data.get('is_active', user.is_active))
+    user.email = (data.get('email') if 'email' in data else user.email) or ''
+    if 'first_name' in data:
+        user.first_name = (data.get('first_name') or '').strip()
+    if 'last_name' in data:
+        user.last_name = (data.get('last_name') or '').strip()
+    if user.pk != request.user.pk:
+        user.is_superuser = is_superuser
+        user.is_staff = is_staff
+        user.is_active = is_active
+    password = (data.get('password') or '').strip()
+    if password:
+        user.set_password(password)
+    user.save()
+    return JsonResponse({'ok': True, 'operator': _operator_serialize(user)})
+
+
+@user_passes_test(lambda u: u.is_authenticated and u.is_superuser)
+@require_POST
+def api_reset_operator_password(request):
+    data = json.loads(request.body)
+    uid = data.get('id')
+    password = (data.get('password') or '').strip()
+    if not password:
+        return JsonResponse({'ok': False, 'error': 'Password required'})
+    try:
+        user = User.objects.get(id=uid)
+    except User.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Owner account not found'})
+    user.set_password(password)
+    user.save()
+    return JsonResponse({'ok': True})
+
+
+@user_passes_test(lambda u: u.is_authenticated and u.is_superuser)
+@require_POST
+def api_delete_operator(request):
+    data = json.loads(request.body)
+    uid = data.get('id')
+    try:
+        user = User.objects.get(id=uid)
+    except User.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Owner account not found'})
+    if user.pk == request.user.pk:
+        return JsonResponse({'ok': False, 'error': 'မိမိကိုယ်တိုင်ရဲ့ အကောင့်ကို ဖျက်လို့ မရပါ'})
+    user.delete()
+    return JsonResponse({'ok': True})
 
 
 @require_POST
