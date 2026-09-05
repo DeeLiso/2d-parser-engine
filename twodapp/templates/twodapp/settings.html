@@ -31,6 +31,12 @@
         .tab-item-sidebar { transition: background-color 0.15s, color 0.15s, transform 0.12s; }
         .tab-item-sidebar:active { transform: scale(0.88); }
         .tab-item-sidebar.active { background-color: #eef2ff; color: #6366f1; }
+        /* Accordion */
+        .settings-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
+        .settings-body.open { grid-template-rows: 1fr; }
+        .settings-body > div { overflow: hidden; }
+        .settings-chevron { transition: transform 0.3s ease; }
+        .settings-toggle.open .settings-chevron { transform: rotate(180deg); }
     </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col md:pl-16">
@@ -101,43 +107,65 @@
     </div>
 
     <!-- Main Content -->
-    <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-20 w-full md:grid md:grid-cols-2 md:gap-4 md:items-stretch space-y-4 md:space-y-0">
+    <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-20 w-full space-y-3">
 
-        <!-- Account Info -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-user-circle mr-2 text-indigo-500"></i>Account</h2>
-            </div>
-            <div class="p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Username</span>
-                    <span class="text-sm font-bold text-gray-800" id="usernameDisplay">{{ request.user.username|default:"Player" }}</span>
+        <!-- Account -->
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle open w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
+                    <i class="fas fa-user-circle text-lg"></i>
                 </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Role</span>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if is_owner %}bg-indigo-100 text-indigo-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
-                        {% if is_owner %}Owner{% else %}Player{% endif %}
-                    </span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Account</span>
+                    <span class="block text-[11px] text-gray-400">Username & Role</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body open">
+                <div>
+                    <div class="p-4 space-y-3 border-t border-gray-100 dark:border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Username</span>
+                            <span class="text-sm font-bold text-gray-800" id="usernameDisplay">{{ request.user.username|default:"Player" }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Role</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if is_owner %}bg-indigo-100 text-indigo-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                                {% if is_owner %}Owner{% else %}Player{% endif %}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         {% if user.is_superuser %}
         <!-- Operator Panel -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-indigo-200 dark:border-indigo-800 overflow-hidden md:col-span-2 transition-colors">
-            <div class="px-4 py-3 bg-indigo-50 dark:bg-slate-900 border-b border-indigo-100 dark:border-indigo-800 flex items-center justify-between">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-user-cog mr-2 text-indigo-600"></i>Operator Panel</h2>
-                <a href="/operator/" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg transition active:scale-95 flex items-center gap-1.5">
-                    <i class="fas fa-external-link-alt"></i> ဖွင့်မည်
-                </a>
-            </div>
-            <div class="p-4 flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
-                    <i class="fas fa-user-shield text-lg"></i>
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-indigo-200 dark:border-indigo-800 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
+                    <i class="fas fa-user-cog text-lg"></i>
                 </div>
-                <div class="min-w-0">
-                    <div class="text-sm font-bold text-gray-800 dark:text-gray-100">Owner & Player အကောင့် စီမံခန့်ခွဲမှု</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Owner ဖွင့်ရန် / ပြင်ရန် / ဖျက်ရန်၊ Password ပြောင်းရန် နှင့် Player အကောင့်များ စီမံခန့်ခွဲရန်</div>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Operator Panel</span>
+                    <span class="block text-[11px] text-gray-400">Owner & Player အကောင့် စီမံခန့်ခွဲမှု</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
+                <div>
+                    <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-t border-indigo-100 dark:border-slate-700">
+                        <div class="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
+                            <i class="fas fa-user-shield text-lg"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">Owner & Player အကောင့် စီမံခန့်ခွဲမှု</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Owner ဖွင့်ရန် / ပြင်ရန် / ဖျက်ရန်၊ Password ပြောင်းရန် နှင့် Player အကောင့်များ စီမံခန့်ခွဲရန်</div>
+                        </div>
+                        <a href="/operator/" class="shrink-0 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg transition active:scale-95 flex items-center gap-1.5">
+                            <i class="fas fa-external-link-alt"></i> ဖွင့်မည်
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -145,166 +173,237 @@
 
         {% if is_owner %}
         <!-- Players -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-emerald-200 dark:border-emerald-800 overflow-hidden md:col-span-2 transition-colors">
-            <div class="px-4 py-3 bg-emerald-50 dark:bg-slate-900 border-b border-emerald-100 dark:border-emerald-800 flex items-center justify-between">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-user-plus mr-2 text-emerald-600"></i>Players</h2>
-                <a href="/bet/manage_bettors/" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg transition active:scale-95 flex items-center gap-1.5">
-                    <i class="fas fa-external-link-alt"></i> ဖွင့်မည်
-                </a>
-            </div>
-            <div class="p-4 flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-300 shrink-0">
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-emerald-200 dark:border-emerald-800 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-300 shrink-0">
                     <i class="fas fa-user-plus text-lg"></i>
                 </div>
-                <div class="min-w-0">
-                    <div class="text-sm font-bold text-gray-800 dark:text-gray-100">Player အကောင့် စီမံခန့်ခွဲမှု</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Player အကောင့် ဖွင့်ရန် / ပြင်ရန် / ဖျက်ရန်</div>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Players</span>
+                    <span class="block text-[11px] text-gray-400">Player အကောင့် စီမံခန့်ခွဲမှု</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
+                <div>
+                    <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-t border-emerald-100 dark:border-slate-700">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-300 shrink-0">
+                            <i class="fas fa-user-plus text-lg"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">Player အကောင့် စီမံခန့်ခွဲမှု</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Player အကောင့် ဖွင့်ရန် / ပြင်ရန် / ဖျက်ရန်</div>
+                        </div>
+                        <a href="/bet/manage_bettors/" class="shrink-0 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg transition active:scale-95 flex items-center gap-1.5">
+                            <i class="fas fa-external-link-alt"></i> ဖွင့်မည်
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
         {% endif %}
 
         <!-- Display -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-text-height mr-2 text-purple-500"></i>Display</h2>
-            </div>
-            <div class="p-4 space-y-3">
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400">Font Size</label>
-                        <span id="fontSizeValue" class="text-xs font-bold text-gray-700">16px</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-font text-xs text-gray-400"></i>
-                        <input type="range" id="fontSizeSlider" min="12" max="24" value="16"
-                            class="flex-1 h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
-                        <i class="fas fa-font text-lg text-gray-400"></i>
-                    </div>
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900 flex items-center justify-center text-purple-500 dark:text-purple-300 shrink-0">
+                    <i class="fas fa-text-height text-lg"></i>
                 </div>
-                <div class="flex items-center justify-between pt-1">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-moon text-sm text-gray-400"></i>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Display</span>
+                    <span class="block text-[11px] text-gray-400">Font Size & Dark Mode</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
+                <div>
+                    <div class="p-4 space-y-3 border-t border-gray-100 dark:border-slate-700">
                         <div>
-                            <div class="text-xs font-semibold text-gray-500">Dark Mode</div>
-                            <div class="text-[10px] text-gray-400" id="darkModeState">Off</div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-semibold text-gray-500 dark:text-gray-400">Font Size</label>
+                                <span id="fontSizeValue" class="text-xs font-bold text-gray-700">16px</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-font text-xs text-gray-400"></i>
+                                <input type="range" id="fontSizeSlider" min="12" max="24" value="16"
+                                    class="flex-1 h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                                <i class="fas fa-font text-lg text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-moon text-sm text-gray-400"></i>
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-500">Dark Mode</div>
+                                    <div class="text-[10px] text-gray-400" id="darkModeState">Off</div>
+                                </div>
+                            </div>
+                            <button id="darkModeToggle" type="button" aria-label="Toggle dark mode"
+                                class="relative w-11 h-6 rounded-full bg-gray-300 transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"></span>
+                            </button>
                         </div>
                     </div>
-                    <button id="darkModeToggle" type="button" aria-label="Toggle dark mode"
-                        class="relative w-11 h-6 rounded-full bg-gray-300 transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                        <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"></span>
-                    </button>
                 </div>
             </div>
         </div>
 
         {% if is_owner %}
         <!-- Change Password -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-lock mr-2 text-amber-500"></i>Change Password</h2>
-            </div>
-            <div class="p-4 space-y-3">
-                <div>
-                    <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Current Password</label>
-                    <input id="oldPassword" type="password" placeholder="Current password"
-                        class="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900 flex items-center justify-center text-amber-500 dark:text-amber-300 shrink-0">
+                    <i class="fas fa-lock text-lg"></i>
                 </div>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Change Password</span>
+                    <span class="block text-[11px] text-gray-400">Account စကားဝှက် ပြောင်းရန်</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
                 <div>
-                    <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">New Password</label>
-                    <input id="newPassword" type="password" placeholder="New password"
-                        class="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                    <div class="p-4 space-y-3 border-t border-gray-100 dark:border-slate-700">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Current Password</label>
+                            <input id="oldPassword" type="password" placeholder="Current password"
+                                class="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">New Password</label>
+                            <input id="newPassword" type="password" placeholder="New password"
+                                class="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Confirm Password</label>
+                            <input id="confirmPassword" type="password" placeholder="Confirm new password"
+                                class="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                        </div>
+                        <div id="pwMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
+                        <button onclick="changePassword()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm transition active:scale-95">
+                            <i class="fas fa-save mr-1"></i> Save Password
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Confirm Password</label>
-                    <input id="confirmPassword" type="password" placeholder="Confirm new password"
-                        class="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
-                </div>
-                <div id="pwMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
-                <button onclick="changePassword()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm transition active:scale-95">
-                    <i class="fas fa-save mr-1"></i> Save Password
-                </button>
             </div>
         </div>
-        {% endif %}
 
-        {% if is_owner %}
         <!-- Operation Log -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden md:col-span-2 transition-colors">
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-history mr-2 text-gray-500"></i>Operation Log</h2>
-            </div>
-            <div class="p-4 max-h-72 overflow-y-auto">
-                <ul id="logList" class="text-sm space-y-1 font-mono"></ul>
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-300 shrink-0">
+                    <i class="fas fa-history text-lg"></i>
+                </div>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Operation Log</span>
+                    <span class="block text-[11px] text-gray-400">မကြာသေးသော မှတ်တမ်း 200</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
+                <div>
+                    <div class="p-4 max-h-72 overflow-y-auto border-t border-gray-100 dark:border-slate-700">
+                        <ul id="logList" class="text-sm space-y-1 font-mono"></ul>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
 
         <!-- About -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-info-circle mr-2 text-blue-500"></i>About</h2>
-            </div>
-            <div class="p-4 space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">App</span>
-                    <span class="text-sm font-bold text-gray-800 dark:text-gray-100">2D FPEngine</span>
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900 flex items-center justify-center text-blue-500 dark:text-blue-300 shrink-0">
+                    <i class="fas fa-info-circle text-lg"></i>
                 </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Version</span>
-                    <span class="text-sm font-bold text-gray-800 dark:text-gray-100">1.0.0</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Developer</span>
-                    <span class="text-sm font-bold text-gray-800 dark:text-gray-100">DeeLiso</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">About</span>
+                    <span class="block text-[11px] text-gray-400">App, Version & Developer</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
+                <div>
+                    <div class="p-4 space-y-2 border-t border-gray-100 dark:border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">App</span>
+                            <span class="text-sm font-bold text-gray-800 dark:text-gray-100">2D FPEngine</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Version</span>
+                            <span class="text-sm font-bold text-gray-800 dark:text-gray-100">1.0.0</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Developer</span>
+                            <span class="text-sm font-bold text-gray-800 dark:text-gray-100">DeeLiso</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         {% if is_owner %}
         <!-- Limit Management -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden md:col-span-2">
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
-                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-exclamation-triangle mr-2 text-red-500"></i>Limit Management</h2>
-            </div>
-            <div class="p-4 space-y-4">
-                <!-- Global Limit -->
+        <div class="settings-item bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900 flex items-center justify-center text-red-500 dark:text-red-300 shrink-0">
+                    <i class="fas fa-exclamation-triangle text-lg"></i>
+                </div>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-gray-800 dark:text-gray-100">Limit Management</span>
+                    <span class="block text-[11px] text-gray-400">Global & Specific Limits</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
                 <div>
-                    <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Global Limit (all numbers)</label>
-                    <div class="flex gap-2">
-                        <input id="globalLimitInput" type="number" min="0" placeholder="e.g. 50000"
-                            value="{{ global_limit }}"
-                            class="flex-1 px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
-                        <button onclick="setGlobalLimit()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-lg transition active:scale-95 whitespace-nowrap">
-                            <i class="fas fa-save mr-1"></i> Set
-                        </button>
+                    <div class="p-4 space-y-4 border-t border-gray-100 dark:border-slate-700">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Global Limit (all numbers)</label>
+                            <div class="flex gap-2">
+                                <input id="globalLimitInput" type="number" min="0" placeholder="e.g. 50000"
+                                    value="{{ global_limit }}"
+                                    class="flex-1 px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition">
+                                <button onclick="setGlobalLimit()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-lg transition active:scale-95 whitespace-nowrap">
+                                    <i class="fas fa-save mr-1"></i> Set
+                                </button>
+                            </div>
+                        </div>
+                        <div id="specLimitsList" class="space-y-1"></div>
+                        <div id="limitMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
                     </div>
                 </div>
-
-                <!-- Active Specific Limits -->
-                <div id="specLimitsList" class="space-y-1"></div>
-
-                <div id="limitMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
             </div>
         </div>
 
         <!-- Clear Data -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-red-900/50 overflow-hidden md:col-span-2 transition-colors">
-            <div class="px-4 py-3 bg-red-50 border-b border-red-100">
-                <h2 class="font-bold text-red-700 text-sm"><i class="fas fa-trash-alt mr-2"></i>Clear Data</h2>
-            </div>
-            <div class="p-4">
-                <p class="text-xs text-gray-500 mb-3">All ledger data and records will be permanently deleted.</p>
-                <button onclick="clearAllData()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg text-sm transition active:scale-95 shadow-md">
-                    <i class="fas fa-trash-alt mr-1"></i> Clear All Data
-                </button>
-                <div id="clearMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2 mt-2"></div>
+        <div class="settings-item bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-red-900/50 overflow-hidden transition-colors">
+            <button type="button" class="settings-toggle w-full px-4 py-3 flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition text-left">
+                <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900 flex items-center justify-center text-red-500 dark:text-red-300 shrink-0">
+                    <i class="fas fa-trash-alt text-lg"></i>
+                </div>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-sm font-bold text-red-600 dark:text-red-300">Clear Data</span>
+                    <span class="block text-[11px] text-gray-400">Ledger & Record အားလုံး ဖျက်ရန်</span>
+                </span>
+                <i class="settings-chevron fas fa-chevron-down text-xs text-gray-400"></i>
+            </button>
+            <div class="settings-body">
+                <div>
+                    <div class="p-4 border-t border-red-100 dark:border-slate-700">
+                        <p class="text-xs text-gray-500 mb-3">All ledger data and records will be permanently deleted.</p>
+                        <button onclick="clearAllData()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg text-sm transition active:scale-95 shadow-md">
+                            <i class="fas fa-trash-alt mr-1"></i> Clear All Data
+                        </button>
+                        <div id="clearMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2 mt-2"></div>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
 
         <!-- Logout -->
-        <form method="post" action="{% url 'logout' %}" class="md:col-span-2">
+        <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl text-sm transition active:scale-95 shadow-md">
                 <i class="fas fa-sign-out-alt mr-2"></i> Logout
@@ -502,6 +601,22 @@
                 });
             }
         }
+
+        // ===== Settings Accordion =====
+        document.querySelectorAll('.settings-toggle').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const body = btn.parentElement.querySelector('.settings-body');
+                const isOpen = body.classList.contains('open');
+                document.querySelectorAll('.settings-body.open').forEach((b) => {
+                    b.classList.remove('open');
+                    b.parentElement.querySelector('.settings-toggle').classList.remove('open');
+                });
+                if (!isOpen) {
+                    body.classList.add('open');
+                    btn.classList.add('open');
+                }
+            });
+        });
     </script>
 
 </body>
