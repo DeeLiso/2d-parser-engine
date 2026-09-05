@@ -1,7 +1,8 @@
 import functools
 import json
+import csv
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import logout
@@ -13,7 +14,8 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import GameState, OperationLog, BettorAccount, ChatMessage, ChatPresence, ChatReaction
+from .models import (GameState, OperationLog, ArchivedLog, BettorAccount,
+                     ChatMessage, ChatPresence, ChatReaction)
 from .parser import parse_text
 
 MMT = ZoneInfo('Asia/Yangon')
@@ -429,6 +431,16 @@ def api_save_meta(request):
 @api_login_required
 def api_clear_all(request):
     state = GameState.get_state()
+    archived = [
+        ArchivedLog(
+            formula=l.formula, original=l.original, numbers=l.numbers, count=l.count,
+            amount=l.amount, is_error=l.is_error, is_canceled=l.is_canceled,
+            bettor_name=l.bettor_name, bettor_date=l.bettor_date,
+            bettor_username=l.bettor_username, created_at=l.created_at,
+        )
+        for l in OperationLog.objects.all()
+    ]
+    ArchivedLog.objects.bulk_create(archived)
     state.ledger = [0] * 100
     state.specific_limits = {}
     state.total_amount = 0
@@ -438,6 +450,62 @@ def api_clear_all(request):
     state.save()
     OperationLog.objects.all().delete()
     return JsonResponse({'ok': True, **state_payload(state)})
+
+
+@login_required
+def api_local_store_info(request):
+    now = timezone.now()
+    qs = ArchivedLog.objects.all()
+    return JsonResponse({
+        'ok': True,
+        'total': qs.count(),
+        'last_week': qs.filter(archived_at__gte=now - timedelta(days=7)).count(),
+        'last_month': qs.filter(archived_at__gte=now - timedelta(days=30)).count(),
+    })
+
+
+@login_required
+@require_POST
+def api_local_store_delete(request):
+    data = json.loads(request.body)
+    period = data.get('period', '')
+    now = timezone.now()
+    if period == 'week':
+        qs = ArchivedLog.objects.filter(archived_at__gte=now - timedelta(days=7))
+    elif period == 'month':
+        qs = ArchivedLog.objects.filter(archived_at__gte=now - timedelta(days=30))
+    else:
+        return JsonResponse({'ok': False, 'error': 'Invalid period'})
+    count = qs.count()
+    qs.delete()
+    base = ArchivedLog.objects.all()
+    return JsonResponse({
+        'ok': True,
+        'deleted': count,
+        'total': base.count(),
+        'last_week': base.filter(archived_at__gte=now - timedelta(days=7)).count(),
+        'last_month': base.filter(archived_at__gte=now - timedelta(days=30)).count(),
+    })
+
+
+@login_required
+def api_local_store_download(request):
+    import io
+    rows = ArchivedLog.objects.all().order_by('archived_at')
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(['archived_at', 'created_at', 'formula', 'original', 'numbers', 'count',
+                     'amount', 'is_error', 'is_canceled', 'bettor_name', 'bettor_date', 'bettor_username'])
+    for l in rows:
+        writer.writerow([
+            l.archived_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
+            l.created_at.astimezone(MMT).strftime('%Y-%m-%d %H:%M:%S'),
+            l.formula, l.original, json.dumps(l.numbers or []), l.count, l.amount,
+            l.is_error, l.is_canceled, l.bettor_name, l.bettor_date, l.bettor_username,
+        ])
+    response = HttpResponse(buf.getvalue(), content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="local_store_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    return response
 
 
 @login_required

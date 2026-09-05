@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
 
 
@@ -81,6 +82,25 @@ class OperationLog(models.Model):
 
     class Meta:
         ordering = ['-id']
+
+
+class ArchivedLog(models.Model):
+    """Records moved to the Local Store when Clear Data is used."""
+    formula = models.CharField(max_length=50, blank=True, default='')
+    original = models.TextField(default='')
+    numbers = models.JSONField(default=list, blank=True)
+    count = models.IntegerField(default=0)
+    amount = models.IntegerField(default=0)
+    is_error = models.BooleanField(default=False)
+    is_canceled = models.BooleanField(default=False)
+    bettor_name = models.CharField(max_length=100, blank=True, default='')
+    bettor_date = models.CharField(max_length=10, blank=True, default='')
+    bettor_username = models.CharField(max_length=50, blank=True, default='')
+    created_at = models.DateTimeField(default=timezone.now)
+    archived_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-archived_at']
 
 
 class ChatMessage(models.Model):
