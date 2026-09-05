@@ -228,6 +228,18 @@
         </div>
         {% endif %}
 
+        {% if is_owner %}
+        <!-- Operation Log -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden md:col-span-2 transition-colors">
+            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
+                <h2 class="font-bold text-gray-700 dark:text-gray-100 text-sm"><i class="fas fa-history mr-2 text-gray-500"></i>Operation Log</h2>
+            </div>
+            <div class="p-4 max-h-72 overflow-y-auto">
+                <ul id="logList" class="text-sm space-y-1 font-mono"></ul>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- About -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
             <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
@@ -469,6 +481,27 @@
 
         // ===== Init =====
         renderSpecLimits();
+
+        // ===== Operation Log =====
+        const logList = document.getElementById('logList');
+        const LOGS = {{ logs_json| safe }};
+        if (logList) {
+            const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+            if (!LOGS.length) {
+                logList.innerHTML = '<li class="text-gray-400 italic">No records yet.</li>';
+            } else {
+                LOGS.forEach((l) => {
+                    const li = document.createElement('li');
+                    li.className = 'py-1 border-b border-gray-100 dark:border-slate-700 last:border-0 break-words';
+                    if (l.is_error) {
+                        li.innerHTML = `<i class="fas fa-exclamation-circle text-red-500 mr-1"></i> <span class="text-red-600 font-medium">Ignored/Invalid:</span> ${esc(l.original)}`;
+                    } else {
+                        li.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-1"></i> Added: [${esc(l.formula)}] ${esc(l.count)} numbers x ${esc(l.amount)} Ks`;
+                    }
+                    logList.appendChild(li);
+                });
+            }
+        }
     </script>
 
 </body>

@@ -678,10 +678,12 @@ def chat_page(request):
 def settings_page(request):
     is_owner = request.user.is_authenticated
     state = GameState.get_state()
+    logs = [_serialize_log(l) for l in OperationLog.objects.order_by('-id')[:200]]
     return render(request, 'twodapp/settings.html', {
         'is_owner': is_owner,
         'global_limit': state.global_limit or '',
         'specific_limits_json': json.dumps(dict(state.specific_limits)),
+        'logs_json': json.dumps(logs),
     })
 
 
