@@ -1003,6 +1003,8 @@
             if (!caretMirror || !caretSpan) return;
             const pos = keypadTarget.selectionStart ?? keypadTarget.value.length;
             const text = keypadTarget.value;
+            const oldMarker = caretMirror.querySelector('#caretMarker');
+            if (oldMarker) oldMarker.parentNode.removeChild(oldMarker);
             if (!text.length) {
                 caretSpan.classList.remove('on');
                 return;
@@ -1050,7 +1052,40 @@
 
         keypadTarget.addEventListener('select', updateCaret);
         keypadTarget.addEventListener('scroll', updateCaret);
+        keypadTarget.addEventListener('input', updateCaret);
+        keypadTarget.addEventListener('click', updateCaret);
+        keypadTarget.addEventListener('touchend', updateCaret);
+        keypadTarget.addEventListener('keyup', updateCaret);
+        document.addEventListener('selectionchange', () => {
+            if (document.activeElement === keypadTarget) updateCaret();
+        });
         window.addEventListener('resize', updateCaret);
+
+        keypadTarget.addEventListener('keydown', (e) => {
+            if (e.target !== keypadTarget) return;
+            const len = keypadTarget.value.length;
+            const start = keypadTarget.selectionStart ?? len;
+            const end = keypadTarget.selectionEnd ?? len;
+            let moved = null;
+            if (e.key === 'ArrowLeft') {
+                moved = Math.max(0, start - 1);
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                moved = Math.min(len, end + 1);
+                e.preventDefault();
+            } else if (e.key === 'Home') {
+                moved = 0;
+                e.preventDefault();
+            } else if (e.key === 'End') {
+                moved = len;
+                e.preventDefault();
+            }
+            if (moved !== null) {
+                keypadTarget.focus();
+                keypadTarget.selectionStart = keypadTarget.selectionEnd = moved;
+                updateCaret();
+            }
+        });
 
         document.querySelectorAll('.keypad-num').forEach((btn) => {
             btn.addEventListener('click', () => keypadInsert(btn.dataset.num));
