@@ -427,8 +427,12 @@
                     <span id="caretSpan"
                         class="absolute w-[2px] bg-indigo-600 pointer-events-none hidden"></span>
                 </div>
+                <div class="flex items-center justify-between mt-1">
+                    <span id="numCounter" class="text-xs font-semibold text-gray-500"></span>
+                    <span id="numWarning" class="text-xs font-bold text-red-600 hidden">30 ထက် ကျော်နေပါသည်</span>
+                </div>
 
-                <div class="mt-4 grid grid-cols-2 gap-1.5 sm:gap-2">
+                <div class="mt-3 grid grid-cols-2 gap-1.5 sm:gap-2">
                     <button id="btnCalculate"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm leading-tight py-2 px-1 rounded-lg shadow transition duration-200">
                         <i class="fas fa-calculator mr-1"></i><span class="break-words">စာရင်းပေါင်းမည်</span>
@@ -889,6 +893,7 @@
                 updateWinDisplay();
                 document.getElementById('viberInput').value = '';
                 if (typeof updateCaret === 'function') updateCaret();
+                if (typeof updateNumCounter === 'function') updateNumCounter();
                 applyState(data);
             }
         }
@@ -906,6 +911,11 @@
             el.value = el.value.slice(0, start) + cleaned + el.value.slice(end);
             el.selectionStart = el.selectionEnd = start + cleaned.length;
             if (typeof updateCaret === 'function') updateCaret();
+            if (typeof updateNumCounter === 'function') updateNumCounter();
+            if (countOriginalNumbers(el.value) > MAX_NUMS) {
+                numWarning.classList.remove('hidden');
+                logMessage('ဂဏန်း 30 ထက် ကျော်နေပါသည် — ဖျက်ပြီး ပြန်ပါ', 'warning');
+            }
             if (cleaned !== pasted) logMessage('Pasted text cleaned → standard format ✓', 'info');
         });
 
@@ -982,6 +992,11 @@
                     const el = document.getElementById('viberInput');
                     el.value = cleaned;
                     el.focus();
+                    updateNumCounter();
+                    if (countOriginalNumbers(el.value) > MAX_NUMS) {
+                        numWarning.classList.remove('hidden');
+                        logMessage('ဂဏန်း 30 ထက် ကျော်နေပါသည် — ဖျက်ပြီး ပြန်ပါ', 'warning');
+                    }
                     logMessage(cleaned !== text ? 'Pasted + cleaned ✓' : 'Pasted from clipboard ✓', 'success');
                 } else {
                     logMessage('Clipboard ထဲ text မရှိပါ — စာကို Copy ကူးပြီး နောက်တစ်ကြိမ် နှိပ်ပါ', 'info');
@@ -998,6 +1013,31 @@
         const keypadTarget = document.getElementById('viberInput');
         const caretMirror = document.getElementById('caretMirror');
         const caretSpan = document.getElementById('caretSpan');
+        const numCounter = document.getElementById('numCounter');
+        const numWarning = document.getElementById('numWarning');
+        const MAX_NUMS = 30;
+
+        function countOriginalNumbers(text) {
+            const cleaned = text.replace(/[^\d]/g, ' ');
+            const tokens = cleaned.split(/\s+/).filter(Boolean);
+            let count = 0;
+            for (const t of tokens) {
+                if (t.length === 2) count++;
+            }
+            return count;
+        }
+
+        function updateNumCounter() {
+            const n = countOriginalNumbers(keypadTarget.value);
+            numCounter.textContent = 'ဂဏန်း ' + n + '/' + MAX_NUMS;
+            numCounter.classList.toggle('text-red-600', n >= MAX_NUMS);
+            numCounter.classList.toggle('text-gray-500', n < MAX_NUMS);
+            if (n > MAX_NUMS) {
+                numWarning.classList.remove('hidden');
+            } else {
+                numWarning.classList.add('hidden');
+            }
+        }
 
         function updateCaret() {
             if (!caretMirror || !caretSpan) return;
@@ -1029,12 +1069,19 @@
         }
 
         function keypadInsert(ch) {
+            const isDigitOnly = /^\d*$/.test(ch) && ch !== '';
+            if (isDigitOnly && countOriginalNumbers(keypadTarget.value) >= MAX_NUMS) {
+                numWarning.classList.remove('hidden');
+                logMessage('ဂဏန်း 30 ထက် ကျော်နေပါသည် — Del နဲ့ ဖျက်ပြီးမှ ထပ်ထည့်ပါ', 'warning');
+                return;
+            }
             keypadTarget.focus();
             const start = keypadTarget.selectionStart ?? keypadTarget.value.length;
             const end = keypadTarget.selectionEnd ?? keypadTarget.value.length;
             keypadTarget.value = keypadTarget.value.slice(0, start) + ch + keypadTarget.value.slice(end);
             keypadTarget.selectionStart = keypadTarget.selectionEnd = start + ch.length;
             updateCaret();
+            updateNumCounter();
         }
         function keypadBackspace() {
             keypadTarget.focus();
@@ -1048,6 +1095,7 @@
                 keypadTarget.selectionStart = keypadTarget.selectionEnd = start;
             }
             updateCaret();
+            updateNumCounter();
         }
 
         keypadTarget.addEventListener('select', updateCaret);
@@ -1115,6 +1163,7 @@
         initLogs();
         initRecords();
         updateWinDisplay();
+        updateNumCounter();
 
         // ===== Active Tab Highlight =====
         (function() {
