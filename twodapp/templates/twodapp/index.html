@@ -432,14 +432,10 @@
                     <span id="numWarning" class="text-xs font-bold text-red-600 hidden">30 ထက် ကျော်နေပါသည်</span>
                 </div>
 
-                <div class="mt-3 grid grid-cols-2 gap-1.5 sm:gap-2">
+                <div class="mt-3 grid grid-cols-1 gap-1.5 sm:gap-2">
                     <button id="btnCalculate"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm leading-tight py-2 px-1 rounded-lg shadow transition duration-200">
                         <i class="fas fa-calculator mr-1"></i><span class="break-words">စာရင်းပေါင်းမည်</span>
-                    </button>
-                    <button id="btnAdd"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xs sm:text-sm leading-tight py-2 px-1 rounded-lg shadow transition duration-200">
-                        <i class="fas fa-paste mr-1"></i> paste
                     </button>
                 </div>
 
@@ -927,85 +923,6 @@
                 el.value = cleaned;
                 if (typeof updateCaret === 'function') updateCaret();
                 logMessage('Input cleaned → standard format ✓', 'info');
-            }
-        });
-
-        // ===== Paste from Clipboard =====
-        // Reads clipboard text using the modern API, falling back to the
-        // classic hidden-textarea + execCommand('paste') trick so it also
-        // works outside secure contexts (e.g. phone over LAN).
-        function readClipboardText() {
-            return new Promise((resolve) => {
-                if (navigator.clipboard && navigator.clipboard.readText) {
-                    navigator.clipboard.readText()
-                        .then(resolve)
-                        .catch(() => legacyPaste(resolve));
-                    return;
-                }
-                legacyPaste(resolve);
-            });
-        }
-
-        function legacyPaste(resolve) {
-            const ta = document.createElement('textarea');
-            ta.setAttribute('readonly', '');
-            ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0;';
-            document.body.appendChild(ta);
-            ta.focus();
-
-            let done = false;
-            const finish = (val) => {
-                if (done) return;
-                done = true;
-                clearTimeout(fallbackTimer);
-                document.removeEventListener('paste', onPaste);
-                if (document.body.contains(ta)) document.body.removeChild(ta);
-                resolve(val);
-            };
-            const onPaste = (e) => {
-                if (e && e.clipboardData && e.clipboardData.getData) {
-                    finish(e.clipboardData.getData('text') || '');
-                } else {
-                    setTimeout(() => finish(ta.value || ''), 0);
-                }
-            };
-            const fallbackTimer = setTimeout(() => finish(ta.value || ''), 500);
-            document.addEventListener('paste', onPaste);
-            let ok = false;
-            try {
-                ok = document.execCommand('paste');
-            } catch (e) {
-                ok = false;
-            }
-            if (!ok) finish('');
-        }
-
-        document.getElementById('btnAdd').addEventListener('click', async () => {
-            const btn = document.getElementById('btnAdd');
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-            try {
-                const text = await readClipboardText();
-                if (text && text.trim()) {
-                    const cleaned = cleanText(text);
-                    const el = document.getElementById('viberInput');
-                    el.value = cleaned;
-                    el.focus();
-                    updateNumCounter();
-                    if (countOriginalNumbers(el.value) > MAX_NUMS) {
-                        numWarning.classList.remove('hidden');
-                        logMessage('ဂဏန်း 30 ထက် ကျော်နေပါသည် — ဖျက်ပြီး ပြန်ပါ', 'warning');
-                    }
-                    logMessage(cleaned !== text ? 'Pasted + cleaned ✓' : 'Pasted from clipboard ✓', 'success');
-                } else {
-                    logMessage('Clipboard ထဲ text မရှိပါ — စာကို Copy ကူးပြီး နောက်တစ်ကြိမ် နှိပ်ပါ', 'info');
-                }
-            } catch (err) {
-                logMessage('Clipboard access failed: ' + err, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
             }
         });
 
