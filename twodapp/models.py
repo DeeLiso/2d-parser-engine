@@ -63,7 +63,7 @@ class BettorAccount(models.Model):
             'is_active': self.is_active,
             'last_user_agent': self.last_user_agent,
             'last_ip': self.last_ip,
-            'last_seen': self.last_seen.astimezone(tz.utc).strftime('%Y-%m-%d %H:%M') if self.last_seen else '',
+            'last_seen': tz.localtime(self.last_seen).strftime('%Y-%m-%d %H:%M') if self.last_seen else '',
         }
 
 

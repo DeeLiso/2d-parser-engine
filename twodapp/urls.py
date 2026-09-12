@@ -47,6 +47,7 @@ urlpatterns = [
     path('chat/', views.chat_page, name='chat'),
     path('bet/chat/', views.bettor_chat_page, name='bettor_chat'),
     path('settings/', views.settings_page, name='settings'),
+    path('bet/settings/', views.bettor_settings_page, name='bettor_settings'),
     path('api/chat/send', views.api_chat_send, name='api_chat_send'),
     path('api/chat/poll', views.api_chat_poll, name='api_chat_poll'),
     path('api/chat/clear', views.api_chat_clear, name='api_chat_clear'),
@@ -58,6 +59,7 @@ urlpatterns = [
     path('api/chat/delete', views.api_chat_delete, name='api_chat_delete'),
     path('api/chat/typing', views.api_chat_typing, name='api_chat_typing'),
     path('api/change_password', views.api_change_password, name='api_change_password'),
+    path('api/bettor/change_password', views.api_bettor_change_password, name='api_bettor_change_password'),
 ]
 
 if settings.DEBUG:

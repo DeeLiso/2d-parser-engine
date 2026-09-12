@@ -91,11 +91,13 @@ def gen_nyiko():
 
 
 def gen_r(s):
-    """R (Reverse) - reverse each 2-digit number in a list, then deduplicate.
+    """R (Reverse) - reverse each 2-digit number in a list.
 
     Handles a single number ("02 R 1500" -> 02, 20), a double number
     ("22 R 1500" -> 22 only, since reversing 22 yields the same number),
     and a series of numbers ("12.14 R 500" -> 12, 21, 14, 41).
+    Duplicate numbers are kept, so "89, 26, 26, 56 r 100" counts 8 bets
+    (each number plus its reverse, including the repeated 26).
     """
     result = []
     for part in re.split(r'[,\s]+', s):
@@ -106,7 +108,7 @@ def gen_r(s):
             result.append(part[1] + part[0])
         else:
             result.append(part)
-    return _dedupe(result)
+    return result
 
 
 def gen_hkway(chars_str, include_puu):

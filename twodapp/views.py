@@ -2,7 +2,7 @@ import functools
 import json
 import csv
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import logout
@@ -755,6 +755,26 @@ def settings_page(request):
     })
 
 
+@api_login_required
+def bettor_settings_page(request):
+    acc = None
+    acc_id = request.session.get('bettor_account_id')
+    if acc_id:
+        try:
+            acc = BettorAccount.objects.get(pk=acc_id)
+        except BettorAccount.DoesNotExist:
+            acc = None
+    return render(request, 'twodapp/settings.html', {
+        'is_owner': False,
+        'is_bettor': True,
+        'bettor_account': acc.to_dict() if acc else None,
+        'bettor_username': request.session.get('bettor_username') or (acc.username if acc else ''),
+        'global_limit': '',
+        'specific_limits_json': json.dumps({}),
+        'logs_json': json.dumps([]),
+    })
+
+
 @require_POST
 @api_login_required
 def api_change_password(request):
@@ -770,6 +790,30 @@ def api_change_password(request):
         return JsonResponse({'ok': False, 'error': 'Wrong current password'})
     user.set_password(new_password)
     user.save()
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+@api_login_required
+def api_bettor_change_password(request):
+    data = json.loads(request.body)
+    old_password = data.get('old_password', '')
+    new_password = data.get('new_password', '')
+    if not old_password or not new_password:
+        return JsonResponse({'ok': False, 'error': 'Passwords required'})
+    if len(new_password) < 4:
+        return JsonResponse({'ok': False, 'error': 'New password must be at least 4 characters'})
+    acc_id = request.session.get('bettor_account_id')
+    if not acc_id:
+        return JsonResponse({'ok': False, 'error': 'Not logged in as player'})
+    try:
+        acc = BettorAccount.objects.get(pk=acc_id)
+    except BettorAccount.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Account not found'})
+    if not acc.check_password(old_password):
+        return JsonResponse({'ok': False, 'error': 'Wrong current password'})
+    acc.set_password(new_password)
+    acc.save()
     return JsonResponse({'ok': True})
 
 
@@ -832,7 +876,7 @@ def api_chat_poll(request):
         try:
             ts = datetime.fromisoformat(last_sync.replace('Z', '+00:00'))
             if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
+                ts = ts.replace(tzinfo=dt_timezone.utc)
             q_conditions |= Q(updated_at__gt=ts)
         except (ValueError, TypeError):
             pass
