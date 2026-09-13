@@ -126,14 +126,24 @@ def gen_hkway(chars_str, include_puu):
 
 
 def gen_kaut(s1, s2, is_reverse):
-    """ကပ် (Kaut) - pair every digit of two numbers"""
+    """ကပ် (Kaut) - pair every digit of the two numbers.
+
+    For each digit a in s1 and b in s2 the number "ab" is produced, and
+    when is_reverse the reverse "ba" is also added -- so a bet of the form
+    "A ကို B ကပ် r" counts 2 x len(A) x len(B) boxes (e.g.
+    "123456 ကို 23 ကပ် r 100" = 24, "12345 ကို 12345 ကပ် r 100" = 50).
+    Duplicates are kept (a doubled digit like 22 contributes 2 entries:
+    22 and 22), matching the expected box count.
+    """
+    s1 = re.sub(r'[^\d]', '', s1)
+    s2 = re.sub(r'[^\d]', '', s2)
     res = []
     for c1 in s1:
         for c2 in s2:
             res.append(c1 + c2)
-            if is_reverse and c1 != c2:
+            if is_reverse:
                 res.append(c2 + c1)
-    return list(dict.fromkeys(res))
+    return res
 
 
 def _dedupe(items):

@@ -240,13 +240,24 @@
         }
         .box-input:focus {
             border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.45), 0 0 18px rgba(99, 102, 241, 0.45), 0 2px 10px rgba(99, 102, 241, 0.25);
         }
         .box-input.box-active {
             border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.45), 0 0 18px rgba(99, 102, 241, 0.45), 0 2px 10px rgba(99, 102, 241, 0.25);
             background: #eef2ff;
         }
+        .box-wrap { position: relative; }
+        .box-caret {
+            position: absolute;
+            width: 2px;
+            display: none;
+            background: #6366f1;
+            border-radius: 1px;
+            pointer-events: none;
+            box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.15);
+        }
+        .box-caret.on { display: block; animation: caretBlink 1s steps(1) infinite; }
     </style>
 
 <body class="text-gray-800 antialiased min-h-screen bg-gray-50 lg:pl-16">
@@ -452,18 +463,24 @@
                     <div class="composer-row flex items-stretch gap-1.5 sm:gap-2">
                         <div class="flex flex-col gap-1 items-stretch flex-1 min-w-0">
                             <label for="numBox" class="text-[9px] sm:text-[10px] font-bold text-gray-500 text-center">ဂဏန်း</label>
-<input id="numBox" type="text" readonly inputmode="none" autocomplete="off" placeholder="12,14,27"
-    class="box-input num-box">
+                            <div class="box-wrap">
+                                <input id="numBox" type="text" readonly inputmode="none" autocomplete="off" placeholder="12,14,27" class="box-input num-box">
+                                <span class="box-caret"></span>
+                            </div>
                         </div>
                         <div class="flex flex-col gap-1 items-stretch flex-1 min-w-0">
                             <label for="formBox" class="text-[9px] sm:text-[10px] font-bold text-gray-500 text-center">Formula</label>
-<input id="formBox" type="text" readonly inputmode="none" autocomplete="off" placeholder="ခွေ"
-    class="box-input form-box">
+                            <div class="box-wrap">
+                                <input id="formBox" type="text" readonly inputmode="none" autocomplete="off" placeholder="ခွေ" class="box-input form-box">
+                                <span class="box-caret"></span>
+                            </div>
                         </div>
                         <div class="flex flex-col gap-1 items-stretch flex-1 min-w-0">
                             <label for="amtBox" class="text-[9px] sm:text-[10px] font-bold text-gray-500 text-center">ငွေ (Ks)</label>
-<input id="amtBox" type="text" readonly inputmode="none" autocomplete="off" placeholder="500"
-    class="box-input amt-box">
+                            <div class="box-wrap">
+                                <input id="amtBox" type="text" readonly inputmode="none" autocomplete="off" placeholder="500" class="box-input amt-box">
+                                <span class="box-caret"></span>
+                            </div>
                         </div>
                     <div class="flex flex-col gap-1.5 items-center justify-center">
                         <button type="button" id="composerAddBtn"
@@ -561,8 +578,8 @@
                             class="btn-tap text-[14px] font-bold py-2.5 rounded-xl bg-sky-50 text-sky-600 hover:bg-sky-100 transition">ဒဲ့</button>
                         <button type="button" id="keypadDelBtn"
                             class="btn-tap text-[14px] font-bold py-2.5 col-span-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition">Del</button>
-                        <button type="button" id="keypadEnterBtn"
-                            class="btn-tap text-[14px] font-bold py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition">Enter</button>
+                        <button type="button" id="keypadSpaceBtn"
+                            class="btn-tap text-[14px] font-bold py-2.5 rounded-xl bg-sky-50 text-sky-600 hover:bg-sky-100 transition">Space</button>
                         <button type="button" class="btn-tap text-[19px] font-bold py-2.5 keypad-num rounded-xl bg-white text-teal-600 hover:bg-teal-50 border border-indigo-100/60 shadow-sm transition hover:shadow"
                             data-num=",">,</button>
                     </div>
@@ -1014,6 +1031,62 @@
         const amtBox = document.getElementById('amtBox');
         const MAX_NUMS = 30;
         let activeBox = numBox;
+        const boxCaretPos = new WeakMap();
+
+        function readBoxSel(box) {
+            const len = box.value.length;
+            if (document.activeElement === box) {
+                return { start: box.selectionStart ?? len, end: box.selectionEnd ?? len };
+            }
+            const p = boxCaretPos.get(box) ?? len;
+            return { start: p, end: p };
+        }
+
+        function focusBox(box) {
+            box.focus({ preventScroll: true });
+            const p = boxCaretPos.get(box) ?? box.value.length;
+            try { box.setSelectionRange(p, p); } catch (err) { /* readonly input on some engines */ }
+        }
+
+        function recordBoxCaret(b) {
+            if (document.activeElement === b) boxCaretPos.set(b, b.selectionStart ?? b.value.length);
+        }
+
+        const BOX_CARET_H = 14;
+        let boxCharW = 0;
+        function updateBoxCaret(box) {
+            if (!box || box !== activeBox) return;
+            const wrap = box.closest('.box-wrap');
+            const caret = wrap ? wrap.querySelector('.box-caret') : null;
+            if (!caret) return;
+            const full = box.value;
+            const pos = (document.activeElement === box)
+                ? (box.selectionStart ?? full.length)
+                : (boxCaretPos.get(box) ?? full.length);
+            if (!full.length) { caret.className = 'box-caret'; return; }
+            if (!boxCharW) {
+                const ctx = document.createElement('canvas').getContext('2d');
+                ctx.font = getComputedStyle(box).font;
+                boxCharW = ctx.measureText('0').width || 8;
+            }
+            const cs = getComputedStyle(box);
+            const padL = parseFloat(cs.paddingLeft);
+            const padR = parseFloat(cs.paddingRight);
+            const padT = parseFloat(cs.paddingTop);
+            const padB = parseFloat(cs.paddingBottom);
+            const bL = parseFloat(cs.borderLeftWidth);
+            const bT = parseFloat(cs.borderTopWidth);
+            const cw = box.clientWidth - padL - padR;
+            const ch2 = box.clientHeight - padT - padB;
+            const fullW = full.length * boxCharW;
+            const left = Math.max(0, (cw - fullW) / 2);
+            const x = bL + padL + left + Math.min(pos, full.length) * boxCharW;
+            const y = bT + padT + (ch2 - BOX_CARET_H) / 2;
+            caret.style.left = x + 'px';
+            caret.style.top = y + 'px';
+            caret.style.height = BOX_CARET_H + 'px';
+            caret.className = 'box-caret on';
+        }
 
         function composerRows() {
             return Array.from(document.querySelectorAll('#composerBoxes .composer-row'));
@@ -1061,22 +1134,24 @@
             activeBox = box;
             document.querySelectorAll('#composerBoxes .box-input').forEach((b) => b.classList.remove('box-active'));
             box.classList.add('box-active');
+            focusBox(box);
+            updateBoxCaret(box);
         }
 
         const FORMULA_KEYS = ['ခွေ', 'ခွေပူး', 'အပူး', 'ပါဝါ', 'ကို', 'နက္ခတ်', 'ကပ်', 'ထိပ်', 'ဘရိတ်', 'နောက်', 'ပါတ်', 'r', 'ညီကို'];
 
         function isAllowedInBox(box, ch) {
             const role = boxRole(box);
-            if (role === 'num') return /^[\d,]+$/.test(ch) || ch === 'ကို';
+            if (role === 'num') return /^[\d,]+$/.test(ch) || ch === 'ကို' || ch === 'ကပ်';
             if (role === 'amt') return /^\d+$/.test(ch);
-            if (role === 'form') return FORMULA_KEYS.includes(ch);
+            if (role === 'form') return FORMULA_KEYS.includes(ch) || ch === ' ';
             return true;
         }
 
         function sanitizeBoxValue(box) {
             const role = boxRole(box);
             let v = box.value;
-            if (role === 'num') v = v.replace(/ကို/g, '\u0001').replace(/[^\d,\u0001]/g, '').replace(/\u0001/g, 'ကို');
+            if (role === 'num') v = v.replace(/ကို/g, '\u0001').replace(/ကပ်/g, '\u0002').replace(/[^\d,\u0001\u0002]/g, '').replace(/\u0001/g, 'ကို').replace(/\u0002/g, 'ကပ်');
             else if (role === 'amt') v = v.replace(/[^\d]/g, '');
             else if (role === 'form') v = v.split(' ').filter((t) => FORMULA_KEYS.includes(t)).join(' ');
             if (v !== box.value) box.value = v;
@@ -1087,23 +1162,27 @@
                 logMessage('ဒီအကွက်မှာ ဒီစာလုံး ထည့်လို့မရပါ', 'warning');
                 return;
             }
-            const start = box.selectionStart ?? box.value.length;
-            const end = box.selectionEnd ?? box.value.length;
+            const { start, end } = readBoxSel(box);
             box.value = box.value.slice(0, start) + ch + box.value.slice(end);
-            if (box === document.activeElement) box.selectionStart = box.selectionEnd = start + ch.length;
+            boxCaretPos.set(box, start + ch.length);
+            focusBox(box);
+            updateBoxCaret(box);
             updateNumCounter();
         }
 
         function boxBackspace(box) {
-            const start = box.selectionStart ?? box.value.length;
-            const end = box.selectionEnd ?? box.value.length;
+            const { start, end } = readBoxSel(box);
+            let p;
             if (start === end && start > 0) {
                 box.value = box.value.slice(0, start - 1) + box.value.slice(end);
-                if (box === document.activeElement) box.selectionStart = box.selectionEnd = start - 1;
+                p = start - 1;
             } else {
                 box.value = box.value.slice(0, start) + box.value.slice(end);
-                if (box === document.activeElement) box.selectionStart = box.selectionEnd = start;
+                p = start;
             }
+            boxCaretPos.set(box, p);
+            focusBox(box);
+            updateBoxCaret(box);
             updateNumCounter();
         }
 
@@ -1112,13 +1191,13 @@
             row.className = 'composer-row flex items-stretch gap-1.5 sm:gap-2';
             row.innerHTML = '' +
                 '<div class="flex flex-col gap-1 items-stretch flex-1 min-w-0">' +
-                '<input type="text" readonly inputmode="none" autocomplete="off" placeholder="12,14,27" class="box-input num-box">' +
+                '<div class="box-wrap"><input type="text" readonly inputmode="none" autocomplete="off" placeholder="12,14,27" class="box-input num-box"><span class="box-caret"></span></div>' +
                 '</div>' +
                 '<div class="flex flex-col gap-1 items-stretch flex-1 min-w-0">' +
-                '<input type="text" readonly inputmode="none" autocomplete="off" placeholder="ခွေ" class="box-input form-box">' +
+                '<div class="box-wrap"><input type="text" readonly inputmode="none" autocomplete="off" placeholder="ခွေ" class="box-input form-box"><span class="box-caret"></span></div>' +
                 '</div>' +
                 '<div class="flex flex-col gap-1 items-stretch flex-1 min-w-0">' +
-                '<input type="text" readonly inputmode="none" autocomplete="off" placeholder="500" class="box-input amt-box">' +
+                '<div class="box-wrap"><input type="text" readonly inputmode="none" autocomplete="off" placeholder="500" class="box-input amt-box"><span class="box-caret"></span></div>' +
                 '</div>';
             document.getElementById('composerBoxes').appendChild(row);
         }
@@ -1128,7 +1207,7 @@
             if (rows.length > 1) {
                 rows[rows.length - 1].remove();
             } else {
-                document.querySelectorAll('#composerBoxes .box-input').forEach((b) => { b.value = ''; });
+                document.querySelectorAll('#composerBoxes .box-input').forEach((b) => { b.value = ''; boxCaretPos.set(b, 0); });
             }
             setActiveBox(numBox);
             updateNumCounter();
@@ -1145,7 +1224,10 @@
             const cur = keypadTarget.value;
             keypadTarget.value = cur ? cur.replace(/\s+$/, '') + '\n' + lines.join('\n') : lines.join('\n');
             keypadTarget.scrollTop = keypadTarget.scrollHeight;
-            composerRows().forEach((row) => row.querySelectorAll('input').forEach((i) => { i.value = ''; }));
+            composerRows().forEach((row) => row.querySelectorAll('input').forEach((i) => {
+            i.value = '';
+            boxCaretPos.set(i, 0);
+        }));
             setActiveBox(numBox);
             updateCaret();
             updateNumCounter();
@@ -1154,13 +1236,36 @@
         const composerBoxesEl = document.getElementById('composerBoxes');
         composerBoxesEl.addEventListener('click', (e) => {
             const b = e.target.closest('.box-input');
-            if (b) setActiveBox(b);
+            if (b) { setActiveBox(b); recordBoxCaret(b); updateBoxCaret(b); }
         });
         composerBoxesEl.addEventListener('focusin', (e) => {
             if (e.target.classList.contains('box-input')) setActiveBox(e.target);
         });
         composerBoxesEl.addEventListener('input', (e) => {
-            if (e.target.classList.contains('box-input')) sanitizeBoxValue(e.target);
+            if (e.target.classList.contains('box-input')) { sanitizeBoxValue(e.target); updateBoxCaret(e.target); }
+        });
+        composerBoxesEl.addEventListener('keyup', (e) => {
+            const b = e.target.closest ? e.target.closest('.box-input') : null;
+            if (b) { recordBoxCaret(b); updateBoxCaret(b); }
+        });
+        composerBoxesEl.addEventListener('touchend', (e) => {
+            const b = e.target.closest ? e.target.closest('.box-input') : null;
+            if (b) { recordBoxCaret(b); updateBoxCaret(b); }
+        });
+        composerBoxesEl.addEventListener('keydown', (e) => {
+            const b = e.target.closest ? e.target.closest('.box-input') : null;
+            if (!b) return;
+            const len = b.value.length;
+            let p = (document.activeElement === b) ? (b.selectionStart ?? len) : (boxCaretPos.get(b) ?? len);
+            if (e.key === 'ArrowLeft') { p = Math.max(0, p - 1); e.preventDefault(); }
+            else if (e.key === 'ArrowRight') { p = Math.min(len, p + 1); e.preventDefault(); }
+            else if (e.key === 'Home') { p = 0; e.preventDefault(); }
+            else if (e.key === 'End') { p = len; e.preventDefault(); }
+            else return;
+            boxCaretPos.set(b, p);
+            b.focus({ preventScroll: true });
+            b.setSelectionRange(p, p);
+            updateBoxCaret(b);
         });
 
         function updateCaret() {
@@ -1207,7 +1312,7 @@
             const k = btn.dataset.key;
             btn.addEventListener('click', () => {
                 const rowBox = activeBox.closest ? activeBox.closest('.composer-row') : null;
-                const t = (k === 'ကို')
+                const t = (k === 'ကို' || k === 'ကပ်')
                     ? (rowBox && rowBox.querySelector('.num-box')) || numBox
                     : (rowBox && rowBox.querySelector('.form-box')) || formBox;
                 boxInsert(t, k);
@@ -1215,7 +1320,7 @@
         });
         document.getElementById('keypadDelBtn').addEventListener('click', () => boxBackspace(activeBox));
         document.getElementById('keypadOkBtn').addEventListener('click', () => boxInsert(activeBox, 'ဒဲ့'));
-        document.getElementById('keypadEnterBtn').addEventListener('click', commitCurrentBet);
+        document.getElementById('keypadSpaceBtn').addEventListener('click', () => boxInsert(activeBox, ' '));
 
         document.getElementById('composerAddBtn').addEventListener('click', addComposerRow);
         document.getElementById('composerClearBtn').addEventListener('click', removeComposerRow);
@@ -1228,8 +1333,16 @@
         keypadTarget.addEventListener('keyup', updateCaret);
         document.addEventListener('selectionchange', () => {
             if (document.activeElement === keypadTarget) updateCaret();
+            const a = document.activeElement;
+            if (a && a.classList && a.classList.contains('box-input')) {
+                boxCaretPos.set(a, a.selectionStart ?? a.value.length);
+                updateBoxCaret(a);
+            }
         });
-        window.addEventListener('resize', updateCaret);
+        window.addEventListener('resize', () => {
+            updateCaret();
+            updateBoxCaret(activeBox);
+        });
 
         keypadTarget.addEventListener('keydown', (e) => {
             if (e.target !== keypadTarget) return;
