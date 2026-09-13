@@ -236,6 +236,7 @@
             color: #1f2937;
             outline: none;
             caret-color: #6366f1;
+            touch-action: manipulation;
             transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         }
         .box-input:focus {
@@ -1064,11 +1065,7 @@
                 ? (box.selectionStart ?? full.length)
                 : (boxCaretPos.get(box) ?? full.length);
             if (!full.length) { caret.className = 'box-caret'; return; }
-            if (!boxCharW) {
-                const ctx = document.createElement('canvas').getContext('2d');
-                ctx.font = getComputedStyle(box).font;
-                boxCharW = ctx.measureText('0').width || 8;
-            }
+            measureBoxCharW();
             const cs = getComputedStyle(box);
             const padL = parseFloat(cs.paddingLeft);
             const padR = parseFloat(cs.paddingRight);
@@ -1086,6 +1083,34 @@
             caret.style.top = y + 'px';
             caret.style.height = BOX_CARET_H + 'px';
             caret.className = 'box-caret on';
+        }
+
+        function measureBoxCharW() {
+            if (boxCharW) return;
+            const ctx = document.createElement('canvas').getContext('2d');
+            ctx.font = getComputedStyle(numBox).font;
+            boxCharW = ctx.measureText('0').width || 8;
+        }
+
+        function boxTapCaretPos(box, clientX) {
+            const len = box.value.length;
+            if (!len) return 0;
+            measureBoxCharW();
+            const cs = getComputedStyle(box);
+            const padL = parseFloat(cs.paddingLeft);
+            const padR = parseFloat(cs.paddingRight);
+            const bL = parseFloat(cs.borderLeftWidth);
+            const cw = box.clientWidth - padL - padR;
+            const fullW = len * boxCharW;
+            const left = Math.max(0, (cw - fullW) / 2);
+            const relX = clientX - box.getBoundingClientRect().left - (bL + padL + left);
+            const p = Math.max(0, Math.min(len, Math.round(relX / boxCharW)));
+            return p;
+        }
+
+        function updateBoxCharW() {
+            boxCharW = 0;
+            measureBoxCharW();
         }
 
         function composerRows() {
@@ -1236,10 +1261,18 @@
         const composerBoxesEl = document.getElementById('composerBoxes');
         composerBoxesEl.addEventListener('click', (e) => {
             const b = e.target.closest('.box-input');
-            if (b) { setActiveBox(b); recordBoxCaret(b); updateBoxCaret(b); }
+            if (b) {
+                let box = b;
+                setTimeout(() => {
+                    boxCaretPos.set(box, boxTapCaretPos(box, e.clientX));
+                    focusBox(box);
+                    updateBoxCaret(box);
+                }, 0);
+                setActiveBox(b);
+            }
         });
         composerBoxesEl.addEventListener('focusin', (e) => {
-            if (e.target.classList.contains('box-input')) setActiveBox(e.target);
+            if (e.target.classList.contains('box-input')) { setActiveBox(e.target); measureBoxCharW(); }
         });
         composerBoxesEl.addEventListener('input', (e) => {
             if (e.target.classList.contains('box-input')) { sanitizeBoxValue(e.target); updateBoxCaret(e.target); }
@@ -1340,6 +1373,7 @@
             }
         });
         window.addEventListener('resize', () => {
+            boxCharW = 0;
             updateCaret();
             updateBoxCaret(activeBox);
         });
